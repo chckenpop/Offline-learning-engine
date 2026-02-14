@@ -1,0 +1,11 @@
+{
+  "id": "weight",
+  "type": "concept",
+  "explain": "Weight is the force of gravity acting on an object.",
+  "example": "An astronaut weighs less on the Moon because gravity is weaker there.",
+  "check": {
+    "question": "What is weight?",
+    "desired_answer": "Weight is the force of gravity acting on an object.",
+    "keywords": ["force", "gravity", "object"]
+  }
+}

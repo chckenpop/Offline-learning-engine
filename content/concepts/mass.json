@@ -1,0 +1,11 @@
+{
+  "id": "mass",
+  "type": "concept",
+  "explain": "Mass is the amount of matter in an object.",
+  "example": "A bowling ball has more mass than a tennis ball.",
+  "check": {
+    "question": "What does mass measure?",
+    "desired_answer": "Mass measures the amount of matter in an object.",
+    "keywords": ["amount", "matter", "object"]
+  }
+}

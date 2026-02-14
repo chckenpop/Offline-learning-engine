@@ -1,0 +1,11 @@
+{
+  "lesson_id": "fractions_intro",
+  "title": "Introduction to Fractions",
+  "intro": "In this lesson, you will learn what fractions are and how their parts work.",
+  "concepts": [
+    "fraction_definition",
+    "numerator",
+    "denominator"
+  ],
+  "outro": "You have completed the introduction to fractions."
+}

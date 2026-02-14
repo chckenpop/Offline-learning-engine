@@ -1,0 +1,11 @@
+{
+  "id": "gravity",
+  "type": "concept",
+  "explain": "Gravity is the force that pulls objects toward each other, especially toward the center of the Earth.",
+  "example": "When you drop a ball, it falls to the ground because of gravity.",
+  "check": {
+    "question": "What is gravity?",
+    "desired_answer": "Gravity is the force that pulls objects toward the Earth.",
+    "keywords": ["force", "pull", "Earth", "objects"]
+  }
+}

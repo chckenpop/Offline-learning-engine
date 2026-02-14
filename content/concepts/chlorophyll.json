@@ -1,0 +1,11 @@
+{
+  "id": "chlorophyll",
+  "type": "concept",
+  "explain": "Chlorophyll is the green pigment in plant leaves that absorbs sunlight for photosynthesis.",
+  "example": "Leaves appear green because of chlorophyll.",
+  "check": {
+    "question": "What is chlorophyll?",
+    "desired_answer": "Chlorophyll is the green pigment in plants that absorbs sunlight for photosynthesis.",
+    "keywords": ["green", "pigment", "absorbs", "sunlight"]
+  }
+}

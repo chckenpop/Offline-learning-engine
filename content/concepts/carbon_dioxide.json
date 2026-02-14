@@ -1,0 +1,11 @@
+{
+  "id": "carbon_dioxide",
+  "type": "concept",
+  "explain": "Carbon dioxide is a gas from the air that plants use during photosynthesis to help make food.",
+  "example": "Plants take in carbon dioxide through tiny openings in their leaves.",
+  "check": {
+    "question": "How do plants use carbon dioxide?",
+    "desired_answer": "Plants use carbon dioxide from the air to make food during photosynthesis.",
+    "keywords": ["plants", "carbon dioxide", "food", "photosynthesis"]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "falling_objects",
+  "type": "concept",
+  "explain": "Objects fall toward the Earth because gravity pulls them downward.",
+  "example": "Leaves fall from trees due to gravity.",
+  "check": {
+    "question": "Why do objects fall to the ground?",
+    "desired_answer": "Objects fall because gravity pulls them toward the Earth.",
+    "keywords": ["gravity", "pulls", "Earth", "fall"]
+  }
+}

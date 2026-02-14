@@ -4,7 +4,7 @@
   "explain": "A fraction represents a part of a whole.",
   "example": "1/2 means one out of two equal parts.",
   "check": {
-    "question": "What does 3/4 represent?",
-    "answer": "three out of four equal parts"
-  }
+  "question": "What does 3/4 represent?",
+  "keywords": ["three", "four", "equal", "parts"]
+}
 }

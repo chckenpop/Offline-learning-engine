@@ -1,0 +1,12 @@
+{
+  "lesson_id": "gravity_intro",
+  "title": "Introduction to Gravity",
+  "intro": "In this lesson, you will learn about gravity and how it affects objects on Earth and in space.",
+  "concepts": [
+    "gravity",
+    "mass",
+    "weight",
+    "falling_objects"
+  ],
+  "outro": "You now understand how gravity influences the motion and weight of objects."
+}

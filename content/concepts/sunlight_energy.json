@@ -1,0 +1,11 @@
+{
+  "id": "sunlight_energy",
+  "type": "concept",
+  "explain": "Sunlight provides the energy that plants need to perform photosynthesis.",
+  "example": "Without sunlight, most plants cannot make their food.",
+  "check": {
+    "question": "Why is sunlight important for plants?",
+    "desired_answer": "Sunlight provides the energy plants need for photosynthesis.",
+    "keywords": ["energy", "photosynthesis", "sunlight", "plants"]
+  }
+}

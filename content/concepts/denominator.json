@@ -1,0 +1,11 @@
+{
+  "id": "denominator",
+  "type": "concept",
+  "explain": "The denominator is the bottom number in a fraction. It shows how many equal parts the whole is divided into.",
+  "example": "In the fraction 3/4, the denominator is 4.",
+  "check": {
+    "question": "What does the denominator represent in a fraction?",
+    "desired_answer": "The denominator is the bottom number of a fraction and shows how many equal parts the whole is divided into.",
+    "keywords": ["bottom", "number", "parts", "divided"]
+  }
+}

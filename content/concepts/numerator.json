@@ -1,0 +1,11 @@
+{
+  "id": "numerator",
+  "type": "concept",
+  "explain": "The numerator is the top number in a fraction. It shows how many parts are taken.",
+  "example": "In the fraction 3/4, the numerator is 3.",
+  "check": {
+    "question": "What does the numerator represent in a fraction?",
+    "desired_answer": "The numerator is the top number of a fraction and shows how many parts are taken.",
+    "keywords": ["top", "number", "parts", "taken"]
+  }
+}

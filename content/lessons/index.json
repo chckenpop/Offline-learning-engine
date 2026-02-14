@@ -1,0 +1,20 @@
+{
+  "lessons": [
+    {
+      "lesson_id": "fractions_intro",
+      "title": "Introduction to Fractions",
+      "path": "fractions_intro.json"
+    },
+    {
+      "lesson_id": "photosynthesis_intro",
+      "title": "Introduction to Photosynthesis",
+      "path": "photosynthesis_intro.json"
+    },
+    {
+      "lesson_id": "gravity_intro",
+      "title": "Introduction to Gravity",
+      "path": "gravity_intro.json"
+    }
+
+  ]
+}

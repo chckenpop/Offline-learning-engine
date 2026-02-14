@@ -1,0 +1,11 @@
+{
+  "id": "water_for_plants",
+  "type": "concept",
+  "explain": "Plants absorb water through their roots, which is used in the process of photosynthesis.",
+  "example": "If a plant does not get enough water, it cannot make food properly.",
+  "check": {
+    "question": "Why do plants need water?",
+    "desired_answer": "Plants need water to perform photosynthesis and make food.",
+    "keywords": ["water", "photosynthesis", "food", "roots"]
+  }
+}
