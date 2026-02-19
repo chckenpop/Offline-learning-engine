@@ -10,129 +10,57 @@ const app = {
     currentConceptIndex: 0,
     isOnline: navigator.onLine,
 
-    // DATA: Populated from actual project content
-    lessons: [
-        {
-            id: "photosynthesis_intro",
-            title: "Introduction to Photosynthesis",
-            description: "Learn how plants transform light into life.",
-            completed: false,
-            concepts: [
-                {
-                    name: "What is Photosynthesis?",
-                    explain: "Photosynthesis is the process by which green plants use sunlight, water, and carbon dioxide to make their own food and release oxygen.",
-                    example: "Plants use photosynthesis during the day to produce food using sunlight.",
-                    question: "What is the process called where plants make food?",
-                    keywords: ["photosynthesis"]
-                },
-                {
-                    name: "Solar Energy",
-                    explain: "Sunlight provides the energy that plants need to perform photosynthesis.",
-                    example: "Without sunlight, most plants cannot make their food.",
-                    question: "What provides energy for photosynthesis?",
-                    keywords: ["sunlight"]
-                },
-                {
-                    name: "The Power of Chlorophyll",
-                    explain: "Chlorophyll is the green pigment in plant leaves that absorbs sunlight for photosynthesis.",
-                    example: "Leaves appear green because of chlorophyll.",
-                    question: "What is the name of the green pigment?",
-                    keywords: ["chlorophyll"]
-                },
-                {
-                    name: "Carbon Dioxide",
-                    explain: "Carbon dioxide is a gas from the air that plants use during photosynthesis to help make food.",
-                    example: "Plants take in carbon dioxide through tiny openings in their leaves.",
-                    question: "What gas do plants take from the air?",
-                    keywords: ["carbon", "dioxide"]
-                },
-                {
-                    name: "Water for Plants",
-                    explain: "Plants absorb water through their roots, which is used in the process of photosynthesis.",
-                    example: "If a plant does not get enough water, it cannot make food properly.",
-                    question: "How do plants get water?",
-                    keywords: ["roots"]
-                }
-            ]
-        },
-        {
-            id: "fractions_intro",
-            title: "Introduction to Fractions",
-            description: "Master the art of parts and wholes.",
-            completed: false,
-            concepts: [
-                {
-                    name: "Parts of a Whole",
-                    explain: "A fraction represents a part of a whole.",
-                    example: "1/2 means one out of two equal parts.",
-                    question: "What does a fraction represent?",
-                    keywords: ["part", "whole"]
-                },
-                {
-                    name: "The Numerator",
-                    explain: "The numerator is the top number in a fraction. It shows how many parts are taken.",
-                    example: "In the fraction 3/4, the numerator is 3.",
-                    question: "Which part of the fraction is the numerator?",
-                    keywords: ["top"]
-                },
-                {
-                    name: "The Denominator",
-                    explain: "The denominator is the bottom number in a fraction. It shows how many equal parts the whole is divided into.",
-                    example: "In the fraction 3/4, the denominator is 4.",
-                    question: "Which part shows the total equal parts?",
-                    keywords: ["bottom", "denominator"]
-                }
-            ]
-        },
-        {
-            id: "gravity_intro",
-            title: "Introduction to Gravity",
-            description: "Explore the force that pulls the universe together.",
-            completed: false,
-            concepts: [
-                {
-                    name: "What is Gravity?",
-                    explain: "Gravity is the force that pulls objects toward each other, especially toward the center of the Earth.",
-                    example: "When you drop a ball, it falls to the ground because of gravity.",
-                    question: "What force pulls objects toward Earth?",
-                    keywords: ["gravity"]
-                },
-                {
-                    name: "Mass",
-                    explain: "Mass is the amount of matter in an object.",
-                    example: "A bowling ball has more mass than a tennis ball.",
-                    question: "What measures the amount of matter?",
-                    keywords: ["mass"]
-                },
-                {
-                    name: "Weight",
-                    explain: "Weight is the force of gravity acting on an object.",
-                    example: "An astronaut weighs less on the Moon because gravity is weaker there.",
-                    question: "What is the force of gravity on an object called?",
-                    keywords: ["weight"]
-                },
-                {
-                    name: "Falling Objects",
-                    explain: "Objects fall toward the Earth because gravity pulls them downward.",
-                    example: "Leaves fall from trees due to gravity.",
-                    question: "Why do objects fall down instead of up?",
-                    keywords: ["gravity", "pulls"]
-                }
-            ]
-        }
-    ],
+    lessons: [],
 
     /**
      * INITIALIZATION
      */
     init: function () {
         this.checkNetwork();
-        this.renderDashboard();
+        this.loadLessons();
         this.renderAchievements();
+        this.wireUpdatesUI();
 
         // Dynamic Network detection
         window.addEventListener('online', () => this.checkNetwork());
         window.addEventListener('offline', () => this.checkNetwork());
+    },
+
+    fetchLessons: async function () {
+        const res = await fetch('/api/lessons');
+        if (!res.ok) {
+            throw new Error(await res.text());
+        }
+        return res.json();
+    },
+
+    loadLessons: async function () {
+        const grid = document.getElementById('lesson-grid');
+        try {
+            const data = await this.fetchLessons();
+            const lessons = (data && data.lessons) ? data.lessons : [];
+            this.lessons = lessons.map((lesson) => ({
+                id: lesson.lesson_id,
+                title: lesson.title || lesson.lesson_id,
+                description: lesson.intro || '',
+                completed: false,
+                concepts: (lesson.concepts || []).map((c) => ({
+                    name: (c.name || c.title || c.id || 'Concept')
+                        .replace(/_/g, ' ')
+                        .replace(/\b\w/g, (m) => m.toUpperCase()),
+                    explain: c.explain || '',
+                    example: c.example || '',
+                    question: (c.check && c.check.question) ? c.check.question : '',
+                    keywords: (c.check && c.check.keywords) ? c.check.keywords : []
+                }))
+            }));
+            this.renderDashboard();
+            this.renderAchievements();
+        } catch (e) {
+            if (grid) {
+                grid.innerHTML = '<div style="color: var(--text-dim);">Unable to load lessons.</div>';
+            }
+        }
     },
 
     /**
@@ -171,11 +99,8 @@ const app = {
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
         document.getElementById(id).classList.add('active');
-        // Find matching nav item
-        const navs = document.querySelectorAll('.nav-item');
-        navs.forEach(n => {
-            if (n.textContent.toLowerCase().includes(id.slice(0, 5))) n.classList.add('active');
-        });
+        const nav = document.querySelector(`.nav-item[data-target="${id}"]`);
+        if (nav) nav.classList.add('active');
     },
 
     /**
@@ -184,6 +109,10 @@ const app = {
     renderDashboard: function () {
         const grid = document.getElementById('lesson-grid');
         grid.innerHTML = '';
+        if (!this.lessons || this.lessons.length === 0) {
+            grid.innerHTML = '<div style="color: var(--text-dim);">No lessons available yet.</div>';
+            return;
+        }
         this.lessons.forEach(lesson => {
             const card = document.createElement('div');
             card.className = 'card';
@@ -211,13 +140,13 @@ const app = {
     loadConcept: function () {
         const concept = this.currentLesson.concepts[this.currentConceptIndex];
         const total = this.currentLesson.concepts.length;
-        document.getElementById('concept-step').innerText = `STEP ${this.currentConceptIndex + 1} OF ${total}`;
-        document.getElementById('concept-title').innerText = concept.name;
-        document.getElementById('explanation').innerText = concept.explain;
-        document.getElementById('example-text').innerText = concept.example;
-        document.getElementById('question').innerText = concept.question;
+        document.getElementById('concept-step').textContent = `STEP ${this.currentConceptIndex + 1} OF ${total}`;
+        document.getElementById('concept-title').textContent = concept.name;
+        document.getElementById('explanation').textContent = concept.explain;
+        document.getElementById('example-text').textContent = concept.example;
+        document.getElementById('question').textContent = concept.question;
         document.getElementById('user-answer').value = '';
-        document.getElementById('feedback').innerText = '';
+        document.getElementById('feedback').textContent = '';
     },
 
     checkAnswer: function () {
@@ -227,7 +156,7 @@ const app = {
 
         const correct = keywords.every(k => input.includes(k));
         if (correct) {
-            feedback.innerText = "✓ Correct!";
+            feedback.textContent = "Correct!";
             feedback.style.color = "var(--accent)";
             setTimeout(() => {
                 if (this.currentConceptIndex < this.currentLesson.concepts.length - 1) {
@@ -238,7 +167,7 @@ const app = {
                 }
             }, 800);
         } else {
-            feedback.innerText = "✗ Try again.";
+            feedback.textContent = "Try again.";
             feedback.style.color = "var(--danger)";
         }
     },
@@ -260,8 +189,8 @@ const app = {
 
         if (completed.length === 0) {
             list.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-dim);">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
-                <p>0 lessons completed. Start learning to earn achievements!</p>
+                <div style="font-size: 0.85rem; margin-bottom: 0.75rem; letter-spacing: 0.2em;">NO ACHIEVEMENTS YET</div>
+                <p>0 lessons completed. Start learning to earn achievements.</p>
             </div>`;
         } else {
             list.innerHTML = '';
@@ -269,7 +198,7 @@ const app = {
                 const card = document.createElement('div');
                 card.className = 'achievement-card';
                 card.innerHTML = `
-                    <div class="achievement-icon">🏆</div>
+                    <div class="achievement-icon">A+</div>
                     <div>
                         <strong>Master of ${l.title.split(' ').pop()}</strong>
                         <p style="font-size: 0.75rem; color: var(--text-dim);">Successfully completed all concepts.</p>
@@ -313,20 +242,71 @@ const app = {
         }
     },
 
-    mockDownload: function (name) {
-        alert(`Downloading "${name}" to your dashboard...`);
-        // Simulating the addition
-        const newLesson = {
-            id: "downloaded_" + Date.now(),
-            title: name,
-            description: "Newly downloaded content from the cloud.",
-            completed: false,
-            concepts: [{ name: "Intro", explain: "Content coming soon...", example: "N/A", question: "Is this downloaded?", keywords: ["yes"] }]
+    /**
+     * UPDATES (Online)
+     */
+    wireUpdatesUI: function () {
+        const applyBtn = document.getElementById('applyBtn');
+        const installedBtn = document.getElementById('installedBtn');
+        const applyArea = document.getElementById('applyArea');
+        const installedList = document.getElementById('installedList');
+        const status = document.getElementById('updateStatus');
+
+        if (!applyBtn || !installedBtn) return;
+
+        const fetchJSON = async (path, opts) => {
+            const res = await fetch(path, opts);
+            if (!res.ok) throw new Error(await res.text());
+            return res.json();
         };
-        this.lessons.push(newLesson);
-        this.renderDashboard();
+
+        applyBtn.onclick = async () => {
+            status.textContent = 'Status: applying updates...';
+            applyArea.textContent = '(running)';
+            try {
+                const data = await fetchJSON('/api/apply', { method: 'POST' });
+                applyArea.textContent = data.output || '(no output)';
+                status.textContent = 'Status: apply finished';
+            } catch (e) {
+                applyArea.textContent = 'Error: ' + e.message;
+                status.textContent = 'Status: error';
+            }
+        };
+
+        installedBtn.onclick = async () => {
+            status.textContent = 'Status: loading installed content...';
+            try {
+                const data = await fetchJSON('/api/installed');
+                installedList.innerHTML = '';
+                if (!data || !data.length) {
+                    installedList.innerHTML = '<li>(none)</li>';
+                } else {
+                    data.forEach(it => {
+                        const li = document.createElement('li');
+                        li.textContent = `${it.type} ${it.content_id} v${it.version}`;
+                        installedList.appendChild(li);
+                    });
+                }
+                status.textContent = 'Status: installed loaded';
+            } catch (e) {
+                installedList.innerHTML = '<li>Error: ' + e.message + '</li>';
+                status.textContent = 'Status: error';
+            }
+        };
+    },
+
+    mockDownload: function (name) {
+        alert(`Download request sent for "${name}".`);
+        this.loadLessons();
         this.showSection('dashboard');
     }
 };
 
-window.onload = () => app.init();
+if (typeof window !== 'undefined') {
+    window.app = app;
+    window.onload = () => app.init();
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { app };
+}

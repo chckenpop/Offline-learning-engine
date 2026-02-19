@@ -1,0 +1,13 @@
+{
+  "name": "offline-learning-engine",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test:ui": "jest --config jest.config.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "jsdom": "^24.0.0"
+  }
+}

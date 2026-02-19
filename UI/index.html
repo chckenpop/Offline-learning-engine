@@ -1,96 +1,141 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bright Study</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bright Study - Offline Learning</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-    <div id="network-alert">⚠️ No Internet Connection. Please connect to use online features.</div>
+    <div id="network-alert">WARNING: No internet connection. Online features are unavailable.</div>
 
-    <!-- Gateway Selection -->
     <div id="gateway">
         <div class="gateway-card">
-            <h1 style="color: var(--accent); margin-bottom: 0.5rem;">BRIGHT STUDY</h1>
-            <p style="color: var(--text-dim); margin-bottom: 2rem;">Offline-First Learning</p>
-            <button class="gateway-btn" onclick="app.setMode('offline')">STUDY OFFLINE</button>
-            <button class="gateway-btn" onclick="app.setMode('online')">STUDY ONLINE</button>
+            <div class="logo-mark">BRIGHT STUDY</div>
+            <h1>Offline-First Learning</h1>
+            <p>Pick a mode to begin your session. Offline mode keeps everything local.</p>
+            <div class="gateway-actions">
+                <button class="gateway-btn primary" onclick="app.setMode('offline')">Study Offline</button>
+                <button class="gateway-btn" onclick="app.setMode('online')">Study Online</button>
+            </div>
+            <div class="gateway-note">Tip: You can switch modes at any time.</div>
         </div>
     </div>
 
-    <!-- Sidebar -->
-    <nav class="sidebar">
-        <div class="sidebar-logo">BRIGHT STUDY</div>
-        <div class="nav-item active" onclick="app.showSection('dashboard')">Dashboard</div>
-        <div class="nav-item" onclick="app.showSection('achievements')">Achievements</div>
-        <div id="online-nav"
-            style="display: none; border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 1rem;">
-            <div class="nav-item" onclick="app.showSection('more-lessons')">Add More Lessons</div>
-        </div>
-        <div style="margin-top: auto; padding: 1rem 0;">
-            <div class="nav-item" onclick="app.resetMode()" style="font-size: 0.75rem; opacity: 0.6;">Change Mode</div>
-        </div>
-    </nav>
-
-    <!-- Content -->
-    <main class="main-content">
-        <!-- Dashboard -->
-        <section id="dashboard" class="view active">
-            <h2 style="margin-bottom: 1.5rem;">My Learning Path</h2>
-            <div id="lesson-grid" class="lesson-grid"></div>
-        </section>
-
-        <!-- Achievements -->
-        <section id="achievements" class="view">
-            <h2>Your Achievements</h2>
-            <div id="achievements-list"></div>
-        </section>
-
-        <!-- Add More Lessons (Online Only) -->
-        <section id="more-lessons" class="view">
-            <h2>Download Lessons</h2>
-            <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Search the cloud for new topics.</p>
-            <div id="search-section">
-                <div class="search-box">
-                    <input type="text" id="search-input" placeholder="Search lesson or concept (e.g. Science)...">
-                    <button class="btn-primary" onclick="app.searchLessons()">Search</button>
-                </div>
-                <div id="search-results" style="margin-top: 1.5rem;"></div>
+    <div class="app-shell">
+        <nav class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-dot"></div>
+                <div class="brand-name">Bright Study</div>
             </div>
-        </section>
+            <div class="nav-item active" data-target="dashboard" onclick="app.showSection('dashboard')">Dashboard</div>
+            <div class="nav-item" data-target="achievements" onclick="app.showSection('achievements')">Achievements</div>
+            <div id="online-nav" class="nav-block">
+                <div class="nav-label">Online Only</div>
+                <div class="nav-item" data-target="more-lessons" onclick="app.showSection('more-lessons')">Add More Lessons</div>
+                <div class="nav-item" data-target="updates" onclick="app.showSection('updates')">Updates</div>
+            </div>
+            <div class="sidebar-footer">
+                <button class="ghost-btn" onclick="app.resetMode()">Change Mode</button>
+            </div>
+        </nav>
 
-        <!-- Classroom -->
-        <section id="classroom" class="view">
-            <div class="classroom-view">
-                <button onclick="app.showSection('dashboard')"
-                    style="background:none; border:none; color:var(--text-dim); cursor:pointer; margin-bottom: 1.5rem;">←
-                    Back</button>
-                <div id="concept-ui">
-                    <span id="concept-step" style="color:var(--accent); font-size: 0.75rem; font-weight: bold;">STEP
-                        1</span>
-                    <h3 id="concept-title" style="margin: 0.5rem 0 1.5rem 0;">Concept Name</h3>
-                    <p id="explanation" style="margin-bottom: 1rem;"></p>
-                    <div class="example-box">
-                        <small
-                            style="color: var(--accent); font-weight: bold; display: block; margin-bottom: 0.5rem;">EXAMPLE</small>
-                        <p id="example-text"></p>
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <div class="eyebrow">Learning Path</div>
+                    <h2 class="page-title">Stay consistent. Grow steady.</h2>
+                </div>
+                <div class="topbar-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Session Ready</span>
+                </div>
+            </header>
+
+            <section id="dashboard" class="view active">
+                <div class="section-head">
+                    <h3>My Lessons</h3>
+                    <p>Pick a lesson to start a focused, step-by-step flow.</p>
+                </div>
+                <div id="lesson-grid" class="lesson-grid"></div>
+            </section>
+
+            <section id="achievements" class="view">
+                <div class="section-head">
+                    <h3>Your Achievements</h3>
+                    <p>Earn badges as you complete lesson tracks.</p>
+                </div>
+                <div id="achievements-list"></div>
+            </section>
+
+            <section id="more-lessons" class="view">
+                <div class="section-head">
+                    <h3>Download Lessons</h3>
+                    <p>Search the cloud for new topics when you are online.</p>
+                </div>
+                <div id="search-section">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Search lesson or concept (e.g. Science)">
+                        <button class="btn-primary" onclick="app.searchLessons()">Search</button>
                     </div>
-                    <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
-                        <p id="question" style="font-weight: bold; margin-bottom: 1rem;"></p>
-                        <input type="text" id="user-answer" placeholder="Your answer...">
-                        <button class="btn-primary" onclick="app.checkAnswer()"
-                            style="width: 100%; margin-top: 1rem;">Submit</button>
-                        <div id="feedback" style="margin-top: 1rem; text-align: center; font-weight: bold;"></div>
+                    <div id="search-results" class="results"></div>
+                </div>
+            </section>
+
+            <section id="updates" class="view">
+                <div class="section-head">
+                    <h3>Content Updates</h3>
+                    <p>Apply new packages and confirm what is installed.</p>
+                </div>
+                <div class="update-panel">
+                    <div class="update-header">
+                        <div>
+                            <div class="update-kicker">Delivery Service</div>
+                            <h4>Sync & Apply Content</h4>
+                            <p>Run updates when online to keep lessons fresh.</p>
+                        </div>
+                        <div class="update-actions">
+                            <button class="btn-primary" id="applyBtn" type="button">Apply Updates</button>
+                            <button class="ghost-btn" id="installedBtn" type="button">Installed Content</button>
+                        </div>
+                    </div>
+                    <div id="updateStatus" class="update-status">Status: idle</div>
+                    <div class="update-grid">
+                        <div>
+                            <div class="update-label">Apply Output</div>
+                            <pre id="applyArea">(not run)</pre>
+                        </div>
+                        <div>
+                            <div class="update-label">Installed</div>
+                            <ul id="installedList" class="update-list"><li>(unknown)</li></ul>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
-    </main>
+            </section>
+
+            <section id="classroom" class="view">
+                <div class="classroom-view">
+                    <button class="ghost-btn" onclick="app.showSection('dashboard')">Back to Dashboard</button>
+                    <div id="concept-ui" class="concept-panel">
+                        <div id="concept-step" class="step-chip">STEP 1</div>
+                        <h3 id="concept-title">Concept Name</h3>
+                        <p id="explanation"></p>
+                        <div class="example-box">
+                            <div class="example-title">Example</div>
+                            <p id="example-text"></p>
+                        </div>
+                        <div class="question-block">
+                            <p id="question"></p>
+                            <input type="text" id="user-answer" placeholder="Your answer">
+                            <button class="btn-primary full-width" onclick="app.checkAnswer()">Submit</button>
+                            <div id="feedback" class="feedback"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
 
     <script src="main.js"></script>
 </body>
-
 </html>

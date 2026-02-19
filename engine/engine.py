@@ -1,7 +1,10 @@
 import json
 import sqlite3
 import os
-from updater import run_update
+import sys
+import time
+import shutil
+from updater import run_update, preview_updates
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(BASE_DIR)
@@ -10,6 +13,31 @@ CONTENT_DIR = os.path.join(PROJECT_DIR, "content")
 LESSONS_DIR = os.path.join(CONTENT_DIR, "lessons")
 CONCEPTS_DIR = os.path.join(CONTENT_DIR, "concepts")
 INDEX_FILE = os.path.join(LESSONS_DIR, "index.json")
+
+
+# -------------------- SIMPLE TERMINAL UI --------------------
+def clear_screen():
+    if os.name == "nt":
+        os.system("cls")
+    else:
+        os.system("clear")
+
+
+def term_width():
+    try:
+        return shutil.get_terminal_size().columns
+    except Exception:
+        return 80
+
+
+def print_header(title):
+    clear_screen()
+    w = term_width()
+    print("=" * w)
+    print(title.center(w))
+    print("=" * w)
+    print()
+
 
 
 
@@ -42,6 +70,13 @@ def init_db():
             type TEXT NOT NULL,
             version TEXT,
             PRIMARY KEY (content_id, type)
+        )
+    """)
+    # Optional aliases mapping (alias -> canonical content id)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS content_aliases (
+            alias TEXT PRIMARY KEY,
+            canonical TEXT
         )
     """)
     
@@ -123,7 +158,21 @@ def normalize(text):
     return text
 
 def get_concept_path(concept_id):
-    return os.path.join(CONCEPTS_DIR, f"{concept_id}.json")
+    # Resolve alias -> canonical id using DB mapping if present
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        cur.execute('SELECT canonical FROM content_aliases WHERE alias = ?', (concept_id,))
+        row = cur.fetchone()
+        conn.close()
+        if row and row[0]:
+            resolved = row[0]
+        else:
+            resolved = concept_id
+    except Exception:
+        resolved = concept_id
+
+    return os.path.join(CONCEPTS_DIR, f"{resolved}.json")
 
 
 def load_lesson(path):
@@ -209,54 +258,105 @@ def save_local_version(content_id, version):
 
 # -------------------- MAIN --------------------
 
+def show_preview(preview):
+    print_header("Smart Update Preview")
+    c_new = preview['concepts']['new']
+    c_update = preview['concepts']['update']
+    c_skip = preview['concepts']['skip']
+
+    l_new = preview['lessons']['new']
+    l_update = preview['lessons']['update']
+    l_skip = preview['lessons']['skip']
+
+    def print_section(title, items):
+        print(f"{title} ({len(items)})")
+        for it in items:
+            if 'installed' in it:
+                print(f" - {it['id']}  (installed: {it['installed']} -> new: {it['version']})")
+            else:
+                print(f" - {it['id']}  (v{it.get('version')})")
+        print()
+
+    print_section("New Concepts", c_new)
+    print_section("Updated Concepts", c_update)
+    print_section("Skipped Concepts", c_skip)
+
+    print_section("New Lessons", l_new)
+    print_section("Updated Lessons", l_update)
+    print_section("Skipped Lessons", l_skip)
+
+
 def main():
-    # ==============================
-    # 🔥 MAIN MENU (ADDED)
-    # ==============================
     # Ensure database directory exists
     db_dir = os.path.dirname(DB_PATH)
     if not os.path.exists(db_dir):
         os.makedirs(db_dir)
-    
+
     init_db()
 
-    print("\n====== OFFLINE LEARNING ENGINE ======\n")
-    print("1. Start Learning")
-    print("2. Check for Updates\n")
+    while True:
+        print_header("OFFLINE LEARNING ENGINE - MAIN MENU")
+        print("1) Start Learning")
+        print("2) Smart Update: Preview")
+        print("3) Smart Update: Apply")
+        print("4) Exit")
 
-    choice = input("Select option: ").strip()
+        choice = input("\nSelect option (1-4): ").strip()
 
-    if choice == "2":
-        run_update()
-        return  # after update stop here
+        if choice == "1":
+            try:
+                index = load_lesson_index()
+            except FileNotFoundError:
+                print('\nNo lessons installed. Run Smart Update first.')
+                input('Press Enter to continue...')
+                continue
 
-    # ==============================
-    # NORMAL LEARNING FLOW
-    # ==============================
-    index = load_lesson_index()
-    selected = select_lesson(index)
+            selected = select_lesson(index)
+            lesson_path = os.path.join(LESSONS_DIR, selected["path"])
+            lesson = load_lesson(lesson_path)
+            lesson_id = lesson["lesson_id"]
 
-    lesson_path = os.path.join(LESSONS_DIR, selected["path"])
-    lesson = load_lesson(lesson_path)
-    lesson_id = lesson["lesson_id"]
+            if get_lesson_status(lesson_id) == "completed":
+                print(f"\nLesson '{lesson['title']}' already completed.\n")
+                input('Press Enter to continue...')
+                continue
 
-    if get_lesson_status(lesson_id) == "completed":
-        print(f"\nLesson '{lesson['title']}' already completed.\n")
-        return
+            print_header(f"Lesson: {lesson.get('title', lesson_id)}")
+            print(lesson.get('intro', ''))
+            for concept_id in lesson.get('concepts', []):
+                concept_path = get_concept_path(concept_id)
+                concept = load_concept(concept_path)
+                run_concept(concept)
 
-    print("\n=== Lesson Start ===\n")
-    print(lesson["title"])
-    print("\n" + lesson["intro"] + "\n")
+            if is_lesson_completed(lesson.get('concepts', [])):
+                save_lesson_status(lesson_id, "completed")
+                print("\n=== Lesson Complete ===\n")
+                print(lesson.get("outro", ""))
+            input('\nPress Enter to return to menu...')
 
-    for concept_id in lesson["concepts"]:
-        concept_path = get_concept_path(concept_id)
-        concept = load_concept(concept_path)
-        run_concept(concept)
+        elif choice == "2":
+            print_header("Smart Update: Preview")
+            try:
+                preview = preview_updates()
+            except Exception:
+                print('\n❌ Could not fetch preview. Check internet or config.')
+                input('Press Enter to continue...')
+                continue
+            show_preview(preview)
+            input('Press Enter to return to menu...')
 
-    if is_lesson_completed(lesson["concepts"]):
-        save_lesson_status(lesson_id, "completed")
-        print("\n=== Lesson Complete ===\n")
-        print(lesson["outro"])
+        elif choice == "3":
+            print_header("Smart Update: Apply")
+            print('Running update now...')
+            run_update()
+            input('Press Enter to return to menu...')
+
+        elif choice == "4":
+            print('Goodbye')
+            break
+        else:
+            print('Invalid choice. Please select 1-4.')
+            time.sleep(0.6)
 
 if __name__ == "__main__":
     main()

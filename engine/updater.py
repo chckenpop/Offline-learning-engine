@@ -88,6 +88,86 @@ def fetch_concepts():
     return res.json()
 
 
+def fetch_concept_detail(concept_id, current_version=None):
+    """Fetch single concept detail using delivery endpoint.
+
+    Expected response JSON keys:
+      - concept: full concept JSON
+      - delivery_version: server version
+      - update_available: bool (if current_version provided)
+      - contract_version
+    """
+    url = f"{SUPABASE_URL}/delivery/concepts/{concept_id}"
+    params = {}
+    if current_version:
+        params['current_version'] = current_version
+
+    res = requests.get(url, headers=HEADERS, params=params)
+    # If endpoint not available or error, fall back to fetching all and filtering
+    if res.status_code != 200:
+        # fallback: try to find in bulk list
+        try:
+            all_concepts = fetch_concepts()
+            for c in all_concepts:
+                if c.get('id') == concept_id:
+                    return {
+                        'concept': c.get('json_data'),
+                        'delivery_version': c.get('version'),
+                        'update_available': (current_version != c.get('version')) if current_version is not None else True,
+                        'contract_version': 'v1'
+                    }
+        except Exception:
+            res.raise_for_status()
+
+    res.raise_for_status()
+    return res.json()
+
+
+def preview_updates():
+    """Return a preview dict of what would be downloaded/updated/skipped.
+
+    Structure:
+    {
+      'concepts': {'new': [id], 'update': [id], 'skip': [id]},
+      'lessons': {'new': [id], 'update': [id], 'skip': [id]}
+    }
+    """
+    try:
+        lessons = fetch_lessons()
+        concepts = fetch_concepts()
+    except Exception as e:
+        raise
+
+    result = {'concepts': {'new': [], 'update': [], 'skip': []},
+              'lessons': {'new': [], 'update': [], 'skip': []}}
+
+    for c in concepts:
+        cid = c['id']
+        version = c.get('version')
+        installed = get_installed_version(cid, 'concept')
+
+        if not installed:
+            result['concepts']['new'].append({'id': cid, 'version': version})
+        elif installed == version:
+            result['concepts']['skip'].append({'id': cid, 'version': version})
+        else:
+            result['concepts']['update'].append({'id': cid, 'version': version, 'installed': installed})
+
+    for l in lessons:
+        lid = l['lesson_id']
+        version = l.get('version')
+        installed = get_installed_version(lid, 'lesson')
+
+        if not installed:
+            result['lessons']['new'].append({'id': lid, 'version': version})
+        elif installed == version:
+            result['lessons']['skip'].append({'id': lid, 'version': version})
+        else:
+            result['lessons']['update'].append({'id': lid, 'version': version, 'installed': installed})
+
+    return result
+
+
 # ==============================
 # 📁 FILE INSTALL HELPERS
 # ==============================
@@ -135,28 +215,62 @@ def run_update():
     skip_count = 0
 
     # --------------------------
-    # 📦 INSTALL CONCEPTS FIRST
+    # 📦 INSTALL CONCEPTS FIRST (per-concept endpoint)
     # --------------------------
     for c in concepts:
-        cid = c["id"]
-        version = c["version"]
-        data = c["json_data"]
-
+        cid = c.get("id")
         installed = get_installed_version(cid, "concept")
 
+        try:
+            detail = fetch_concept_detail(cid, current_version=installed)
+        except Exception:
+            # fallback to bulk payload if per-concept endpoint fails
+            version = c.get("version")
+            data = c.get("json_data")
+            if not installed:
+                action = "new"
+            elif installed == version:
+                skip_count += 1
+                continue
+            else:
+                action = "update"
+
+            path = os.path.join(CONCEPTS_DIR, f"{cid}.json")
+            save_json(path, data)
+            upsert_installed(cid, "concept", version)
+
+            if action == "new":
+                new_count += 1
+                print(f"📦 Installed concept: {cid}")
+            else:
+                update_count += 1
+                print(f"♻️ Updated concept: {cid}")
+            continue
+
+        # detail expected shape: {'concept':..., 'delivery_version':..., 'update_available':bool}
+        if isinstance(detail, dict) and 'concept' in detail:
+            data = detail['concept']
+            delivery_version = detail.get('delivery_version') or detail.get('version')
+            update_available = detail.get('update_available', True)
+        else:
+            # unexpected shape; try to use bulk record
+            data = c.get('json_data')
+            delivery_version = c.get('version')
+            update_available = (installed != delivery_version)
+
         if not installed:
-            action = "new"
-        elif installed == version:
+            action = 'new'
+        elif not update_available:
             skip_count += 1
             continue
         else:
-            action = "update"
+            action = 'update'
 
         path = os.path.join(CONCEPTS_DIR, f"{cid}.json")
         save_json(path, data)
-        upsert_installed(cid, "concept", version)
+        upsert_installed(cid, 'concept', delivery_version)
 
-        if action == "new":
+        if action == 'new':
             new_count += 1
             print(f"📦 Installed concept: {cid}")
         else:
