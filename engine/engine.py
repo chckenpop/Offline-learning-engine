@@ -1,10 +1,15 @@
 import json
 import sqlite3
 import os
-
-DB_PATH = "../database/progress.db"
+from updater import run_update
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(BASE_DIR)
+DB_PATH = os.path.join(PROJECT_DIR, "database", "progress.db")
+CONTENT_DIR = os.path.join(PROJECT_DIR, "content")
+LESSONS_DIR = os.path.join(CONTENT_DIR, "lessons")
+CONCEPTS_DIR = os.path.join(CONTENT_DIR, "concepts")
+INDEX_FILE = os.path.join(LESSONS_DIR, "index.json")
 
 
 
@@ -30,10 +35,15 @@ def init_db():
         )
     """)
 
-    #     CREATE TABLE IF NOT EXISTS content_versions (
-    #     content_id TEXT PRIMARY KEY,
-    #     version TEXT
-    # );
+    # Track installed content versions
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS installed_content (
+            content_id TEXT NOT NULL,
+            type TEXT NOT NULL,
+            version TEXT,
+            PRIMARY KEY (content_id, type)
+        )
+    """)
     
 
     conn.commit()
@@ -113,13 +123,7 @@ def normalize(text):
     return text
 
 def get_concept_path(concept_id):
-    return os.path.join(
-        BASE_DIR,
-        "..",
-        "content",
-        "concepts",
-        f"{concept_id}.json"
-    )
+    return os.path.join(CONCEPTS_DIR, f"{concept_id}.json")
 
 
 def load_lesson(path):
@@ -127,10 +131,7 @@ def load_lesson(path):
         return json.load(f)
 
 def load_lesson_index():
-    index_path = os.path.join(
-        BASE_DIR, "..", "content", "lessons", "index.json"
-    )
-    with open(index_path, "r", encoding="utf-8") as f:
+    with open(INDEX_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -209,17 +210,33 @@ def save_local_version(content_id, version):
 # -------------------- MAIN --------------------
 
 def main():
-    if not os.path.exists("../database"):
-        os.makedirs("../database")
-
+    # ==============================
+    # 🔥 MAIN MENU (ADDED)
+    # ==============================
+    # Ensure database directory exists
+    db_dir = os.path.dirname(DB_PATH)
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir)
+    
     init_db()
 
+    print("\n====== OFFLINE LEARNING ENGINE ======\n")
+    print("1. Start Learning")
+    print("2. Check for Updates\n")
+
+    choice = input("Select option: ").strip()
+
+    if choice == "2":
+        run_update()
+        return  # after update stop here
+
+    # ==============================
+    # NORMAL LEARNING FLOW
+    # ==============================
     index = load_lesson_index()
     selected = select_lesson(index)
 
-    lesson_path = os.path.join(
-        BASE_DIR, "..", "content", "lessons", selected["path"]
-    )
+    lesson_path = os.path.join(LESSONS_DIR, selected["path"])
     lesson = load_lesson(lesson_path)
     lesson_id = lesson["lesson_id"]
 
@@ -240,7 +257,6 @@ def main():
         save_lesson_status(lesson_id, "completed")
         print("\n=== Lesson Complete ===\n")
         print(lesson["outro"])
-
 
 if __name__ == "__main__":
     main()

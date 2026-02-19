@@ -12,9 +12,13 @@
     },
     {
       "lesson_id": "gravity_intro",
-      "title": "Introduction to Gravity",
+      "title": "Gravity Intro",
       "path": "gravity_intro.json"
+    },
+    {
+      "lesson_id": "introduction_to_gravity",
+      "title": "Introduction to Gravity",
+      "path": "introduction_to_gravity.json"
     }
-
   ]
 }
