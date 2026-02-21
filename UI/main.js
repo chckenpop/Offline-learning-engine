@@ -4,6 +4,13 @@
  * Size constrained under 10MB project goal.
  */
 
+// Base URL of the FastAPI backend. When served directly from FastAPI
+// at http://localhost:8000, relative paths work. Change this only if
+// the frontend is served from a different origin.
+const API_BASE = (typeof window !== 'undefined' && window.location.port === '5173')
+    ? 'http://localhost:8000'   // Vite dev-server cross-origin
+    : '';                       // Same-origin (served by FastAPI)
+
 const app = {
     mode: null,
     currentLesson: null,
@@ -20,6 +27,7 @@ const app = {
         this.loadLessons();
         this.renderAchievements();
         this.wireUpdatesUI();
+        this.checkBackendHealth();
 
         // Dynamic Network detection
         window.addEventListener('online', () => this.checkNetwork());
@@ -27,11 +35,49 @@ const app = {
     },
 
     fetchLessons: async function () {
-        const res = await fetch('/api/lessons');
+        const res = await fetch(`${API_BASE}/api/lessons`);
         if (!res.ok) {
             throw new Error(await res.text());
         }
         return res.json();
+    },
+
+    /**
+     * BACKEND HEALTH CHECK
+     */
+    checkBackendHealth: async function () {
+        try {
+            const res = await fetch(`${API_BASE}/health`);
+            const dot = document.getElementById('health-dot');
+            const label = document.getElementById('health-label');
+            if (res.ok) {
+                if (dot) dot.style.background = '#4ade80';
+                if (label) label.textContent = 'API online';
+            } else {
+                if (dot) dot.style.background = '#f87171';
+                if (label) label.textContent = 'API error';
+            }
+        } catch {
+            const dot = document.getElementById('health-dot');
+            const label = document.getElementById('health-label');
+            if (dot) dot.style.background = '#f59e0b';
+            if (label) label.textContent = 'API unreachable';
+        }
+    },
+
+    /**
+     * PERSIST PROGRESS TO BACKEND
+     */
+    persistProgress: async function (payload) {
+        try {
+            await fetch(`${API_BASE}/api/progress`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+        } catch {
+            // Offline — progress already tracked locally; silently ignore
+        }
     },
 
     loadLessons: async function () {
@@ -151,13 +197,18 @@ const app = {
 
     checkAnswer: function () {
         const input = document.getElementById('user-answer').value.toLowerCase();
-        const keywords = this.currentLesson.concepts[this.currentConceptIndex].keywords;
+        const concept = this.currentLesson.concepts[this.currentConceptIndex];
+        const keywords = concept.keywords;
         const feedback = document.getElementById('feedback');
 
         const correct = keywords.every(k => input.includes(k));
         if (correct) {
             feedback.textContent = "Correct!";
             feedback.style.color = "var(--accent)";
+            // Persist concept completion to backend (fire-and-forget)
+            if (concept.id) {
+                this.persistProgress({ concept_id: concept.id, status: 'completed' });
+            }
             setTimeout(() => {
                 if (this.currentConceptIndex < this.currentLesson.concepts.length - 1) {
                     this.currentConceptIndex++;
@@ -174,6 +225,8 @@ const app = {
 
     completeLesson: function () {
         this.currentLesson.completed = true;
+        // Persist lesson completion to backend (fire-and-forget)
+        this.persistProgress({ lesson_id: this.currentLesson.id, status: 'completed' });
         this.renderDashboard();
         this.renderAchievements();
         alert("Lesson Completed! Your achievements updated.");
@@ -210,35 +263,69 @@ const app = {
     },
 
     /**
-     * ADD MORE LESSONS (Online Mock)
+     * ADD MORE LESSONS (Online - Wired to Backend)
      */
-    searchLessons: function () {
-        const query = document.getElementById('search-input').value.toLowerCase();
+    searchLessons: async function () {
+        const input = document.getElementById('search-input');
+        const query = input.value.toLowerCase().trim();
         const results = document.getElementById('search-results');
 
         if (!query) return;
 
-        // "Validation Site" mock response
-        const mockCloud = [
-            { title: "Advanced Chemistry", type: "Lesson", id: "chem_1" },
-            { title: "World History: Origins", type: "Lesson", id: "hist_1" },
-            { title: "Space Exploration", type: "Concept", id: "space_1" }
-        ];
+        results.innerHTML = '<p style="color:var(--text-dim);">Searching content...</p>';
 
-        const match = mockCloud.filter(m => m.title.toLowerCase().includes(query));
+        try {
+            // Fetch both concepts and lessons in parallel
+            const [conceptsRes, lessonsRes] = await Promise.all([
+                fetch(`${API_BASE}/concepts/`),
+                fetch(`${API_BASE}/api/lessons`)
+            ]);
 
-        if (match.length > 0) {
-            results.innerHTML = match.map(m => `
-                <div class="result-item">
-                    <div>
-                        <strong>${m.title}</strong>
-                        <div style="font-size: 0.7rem; color: var(--accent);">${m.type}</div>
+            const concepts = conceptsRes.ok ? await conceptsRes.json() : [];
+            const lessonsData = lessonsRes.ok ? await lessonsRes.json() : { lessons: [] };
+            const lessons = lessonsData.lessons || [];
+
+            const matches = [];
+
+            // Match concepts
+            concepts.forEach(c => {
+                if (c.latest_version && c.latest_version.name.toLowerCase().includes(query)) {
+                    matches.push({
+                        title: c.latest_version.name,
+                        type: 'Concept',
+                        version: c.latest_version.version_number,
+                        status: c.status
+                    });
+                }
+            });
+
+            // Match lessons
+            lessons.forEach(l => {
+                if (l.title.toLowerCase().includes(query)) {
+                    matches.push({
+                        title: l.title,
+                        type: 'Lesson',
+                        id: l.lesson_id
+                    });
+                }
+            });
+
+            if (matches.length > 0) {
+                results.innerHTML = matches.map(m => `
+                    <div class="result-item">
+                        <div>
+                            <strong>${m.title}</strong>
+                            <div style="font-size: 0.7rem; color: var(--accent);">${m.type} ${m.version ? `(v${m.version})` : ''}</div>
+                            ${m.status ? `<div style="font-size: 0.65rem; color: var(--text-dim);">${m.status}</div>` : ''}
+                        </div>
+                        <button class="add-btn" onclick="app.mockDownload('${m.title}')">ADD +</button>
                     </div>
-                    <button class="add-btn" onclick="app.mockDownload('${m.title}')">ADD +</button>
-                </div>
-            `).join('');
-        } else {
-            results.innerHTML = '<p style="color:var(--text-dim);">No results found in cloud.</p>';
+                `).join('');
+            } else {
+                results.innerHTML = '<p style="color:var(--text-dim);">No matching content found.</p>';
+            }
+        } catch (err) {
+            results.innerHTML = `<p style="color:var(--danger);">Error searching: ${err.message}</p>`;
         }
     },
 
