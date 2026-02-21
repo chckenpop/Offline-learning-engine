@@ -272,57 +272,25 @@ const app = {
 
         if (!query) return;
 
-        results.innerHTML = '<p style="color:var(--text-dim);">Searching content...</p>';
+        results.innerHTML = '<p style="color:var(--text-dim);">Searching Supabase cloud...</p>';
 
         try {
-            // Fetch both concepts and lessons in parallel
-            const [conceptsRes, lessonsRes] = await Promise.all([
-                fetch(`${API_BASE}/concepts/`),
-                fetch(`${API_BASE}/api/lessons`)
-            ]);
+            const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
+            if (!res.ok) throw new Error('Search failed');
+            const matches = await res.json();
 
-            const concepts = conceptsRes.ok ? await conceptsRes.json() : [];
-            const lessonsData = lessonsRes.ok ? await lessonsRes.json() : { lessons: [] };
-            const lessons = lessonsData.lessons || [];
-
-            const matches = [];
-
-            // Match concepts
-            concepts.forEach(c => {
-                if (c.latest_version && c.latest_version.name.toLowerCase().includes(query)) {
-                    matches.push({
-                        title: c.latest_version.name,
-                        type: 'Concept',
-                        version: c.latest_version.version_number,
-                        status: c.status
-                    });
-                }
-            });
-
-            // Match lessons
-            lessons.forEach(l => {
-                if (l.title.toLowerCase().includes(query)) {
-                    matches.push({
-                        title: l.title,
-                        type: 'Lesson',
-                        id: l.lesson_id
-                    });
-                }
-            });
-
-            if (matches.length > 0) {
+            if (matches && matches.length > 0) {
                 results.innerHTML = matches.map(m => `
                     <div class="result-item">
                         <div>
                             <strong>${m.title}</strong>
                             <div style="font-size: 0.7rem; color: var(--accent);">${m.type} ${m.version ? `(v${m.version})` : ''}</div>
-                            ${m.status ? `<div style="font-size: 0.65rem; color: var(--text-dim);">${m.status}</div>` : ''}
                         </div>
                         <button class="add-btn" onclick="app.mockDownload('${m.title}')">ADD +</button>
                     </div>
                 `).join('');
             } else {
-                results.innerHTML = '<p style="color:var(--text-dim);">No matching content found.</p>';
+                results.innerHTML = '<p style="color:var(--text-dim);">No matching content found in Supabase.</p>';
             }
         } catch (err) {
             results.innerHTML = `<p style="color:var(--danger);">Error searching: ${err.message}</p>`;
