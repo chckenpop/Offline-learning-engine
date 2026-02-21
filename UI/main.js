@@ -4,11 +4,9 @@
  * Size constrained under 10MB project goal.
  */
 
-// Base URL of the FastAPI backend. When served directly from FastAPI
-// at http://localhost:8000, relative paths work. Change this only if
-// the frontend is served from a different origin.
-const API_BASE = (typeof window !== 'undefined' && window.location.port === '5173')
-    ? 'http://localhost:8000'   // Vite dev-server cross-origin
+// Base URL of the FastAPI backend.
+const API_BASE = (typeof window !== 'undefined' && (window.location.port === '5173' || window.location.protocol === 'file:'))
+    ? 'http://localhost:8000'   // Dev-server or local file
     : '';                       // Same-origin (served by FastAPI)
 
 const app = {
@@ -16,6 +14,8 @@ const app = {
     currentLesson: null,
     currentConceptIndex: 0,
     isOnline: navigator.onLine,
+    networkQuality: 'UNKNOWN', // 'LOW', 'AVERAGE', 'HIGH'
+    speedMBps: 0,
 
     lessons: [],
 
@@ -28,6 +28,9 @@ const app = {
         this.renderAchievements();
         this.wireUpdatesUI();
         this.checkBackendHealth();
+
+        // Run an automatic speed test on load to help the user choose a mode
+        this.runSpeedTest(true);
 
         // Dynamic Network detection
         window.addEventListener('online', () => this.checkNetwork());
@@ -51,7 +54,7 @@ const app = {
             const dot = document.getElementById('health-dot');
             const label = document.getElementById('health-label');
             if (res.ok) {
-                if (dot) dot.style.background = '#4ade80';
+                if (dot) { dot.style.background = '#4ade80'; }
                 if (label) label.textContent = 'API online';
             } else {
                 if (dot) dot.style.background = '#f87171';
@@ -96,6 +99,7 @@ const app = {
                         .replace(/\b\w/g, (m) => m.toUpperCase()),
                     explain: c.explain || '',
                     example: c.example || '',
+                    videos: c.videos || null, // Expect { low: 'url', high: 'url' }
                     question: (c.check && c.check.question) ? c.check.question : '',
                     keywords: (c.check && c.check.keywords) ? c.check.keywords : []
                 }))
@@ -126,15 +130,154 @@ const app = {
     /**
      * MODE MANAGEMENT
      */
-    setMode: function (mode) {
+    setMode: async function (mode) {
+        if (mode === 'online') {
+            // If we are currently "Unknown", run a quick test
+            if (this.networkQuality === 'UNKNOWN') {
+                await this.runSpeedTest();
+            }
+        } else {
+            this.networkQuality = 'OFFLINE';
+            this.updateNetworkBadge();
+        }
+
         this.mode = mode;
         document.getElementById('gateway').style.display = 'none';
         document.getElementById('online-nav').style.display = mode === 'online' ? 'block' : 'none';
         this.checkNetwork();
     },
 
+    /**
+     * SPEED TEST LOGIC
+     * @param {boolean} isInitial - Whether this is being called from the gateway
+     */
+    runSpeedTest: async function (isInitial = false) {
+        const overlay = document.getElementById('speed-test-overlay');
+        const gatewayMsg = document.getElementById('gateway-speed-msg');
+        const gatewaySpinner = document.getElementById('gateway-spinner');
+        const retestBtn = document.getElementById('retest-btn');
+        const onlineBtn = document.getElementById('online-btn');
+
+        if (!isInitial) {
+            overlay.style.display = 'flex';
+        } else {
+            if (gatewaySpinner) gatewaySpinner.style.display = 'block';
+            if (gatewayMsg) gatewayMsg.textContent = 'Measuring real internet speed...';
+            if (retestBtn) retestBtn.style.display = 'none';
+        }
+
+        try {
+            if (!navigator.onLine) {
+                throw new Error("Offline");
+            }
+
+            // Test parameters: 3 samples for averaging
+            const SAMPLES = 3;
+            const TEST_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'; // ~600KB
+            let totalSpeed = 0;
+            let successCount = 0;
+
+            console.log(`[SpeedTest] Starting ${SAMPLES}-sample test...`);
+
+            for (let i = 0; i < SAMPLES; i++) {
+                if (isInitial && gatewayMsg) {
+                    gatewayMsg.textContent = `Analyzing stability (${Math.round(((i) / SAMPLES) * 100)}%)...`;
+                }
+
+                try {
+                    const sampleStartTime = performance.now();
+                    const response = await fetch(`${TEST_URL}?cb=${Date.now()}_${i}`);
+                    if (!response.ok) continue;
+
+                    const blob = await response.blob();
+                    const sampleEndTime = performance.now();
+
+                    const durationInSeconds = (sampleEndTime - sampleStartTime) / 1000;
+                    const sizeInMB = blob.size / (1024 * 1024);
+                    const sampleSpeed = sizeInMB / (durationInSeconds || 0.001);
+
+                    console.log(`[SpeedTest] Sample ${i + 1}: ${sampleSpeed.toFixed(2)} MB/s`);
+                    totalSpeed += sampleSpeed;
+                    successCount++;
+
+                    // Small breather to avoid saturating buffer
+                    await new Promise(r => setTimeout(r, 100));
+                } catch (err) {
+                    console.warn(`[SpeedTest] Sample ${i + 1} failed:`, err);
+                }
+            }
+
+            if (successCount === 0) throw new Error("Connection unstable (0/3 samples)");
+
+            this.speedMBps = totalSpeed / successCount;
+            const speedMbps = (this.speedMBps * 8).toFixed(1);
+
+            console.log(`[SpeedTest] Final Average: ${speedMbps} Mbps (${this.speedMBps.toFixed(2)} MB/s)`);
+
+            // Revised Thresholds (MBps)
+            // LOW: < 0.4 (~3 Mbps)
+            // AVERAGE: 0.4 - 1.2 (~3 - 10 Mbps)
+            // HIGH: > 1.2 (~10+ Mbps)
+            if (this.speedMBps < 0.4) {
+                this.networkQuality = 'LOW';
+            } else if (this.speedMBps < 1.2) {
+                this.networkQuality = 'AVERAGE';
+            } else {
+                this.networkQuality = 'HIGH';
+            }
+
+            if (isInitial && gatewayMsg) {
+                gatewayMsg.innerHTML = `${speedMbps} Mbps &bull; <strong>${this.networkQuality}</strong>`;
+                if (this.networkQuality !== 'LOW') {
+                    onlineBtn.classList.add('recommended');
+                    gatewayMsg.style.color = 'var(--accent)';
+                } else {
+                    gatewayMsg.style.color = 'var(--accent-2)';
+                }
+            }
+
+        } catch (e) {
+            console.error("[SpeedTest] Failed:", e);
+            this.networkQuality = 'LOW';
+            if (isInitial && gatewayMsg) {
+                gatewayMsg.textContent = 'Connection Unstable';
+                gatewayMsg.style.color = 'var(--danger)';
+            }
+        } finally {
+            if (!isInitial) {
+                overlay.style.display = 'none';
+            } else {
+                if (gatewaySpinner) gatewaySpinner.style.display = 'none';
+                if (retestBtn) retestBtn.style.display = 'block';
+            }
+            this.updateNetworkBadge();
+        }
+    },
+
+    updateNetworkBadge: function () {
+        const badge = document.getElementById('network-status');
+        if (!badge) return;
+
+        badge.style.display = 'inline-block';
+        badge.className = 'status-badge';
+
+        if (this.networkQuality === 'LOW') {
+            badge.textContent = 'Network: Low';
+            badge.classList.add('status-low');
+        } else if (this.networkQuality === 'AVERAGE') {
+            badge.textContent = 'Network: Average';
+            badge.classList.add('status-avg');
+        } else if (this.networkQuality === 'HIGH') {
+            badge.textContent = 'Network: High';
+            badge.classList.add('status-high');
+        } else {
+            badge.style.display = 'none';
+        }
+    },
+
     resetMode: function () {
         document.getElementById('gateway').style.display = 'flex';
+        this.runSpeedTest(true);
     },
 
     /**
@@ -189,6 +332,23 @@ const app = {
         document.getElementById('concept-step').textContent = `STEP ${this.currentConceptIndex + 1} OF ${total}`;
         document.getElementById('concept-title').textContent = concept.name;
         document.getElementById('explanation').textContent = concept.explain;
+
+        const videoContainer = document.getElementById('video-container');
+        const videoElement = document.getElementById('lesson-video');
+
+        if (this.mode === 'online' && concept.videos && this.networkQuality !== 'LOW') {
+            const videoUrl = this.networkQuality === 'HIGH' ? concept.videos.high : concept.videos.low;
+            if (videoUrl) {
+                videoElement.src = videoUrl;
+                videoContainer.style.display = 'block';
+            } else {
+                videoContainer.style.display = 'none';
+            }
+        } else {
+            videoContainer.style.display = 'none';
+            videoElement.src = '';
+        }
+
         document.getElementById('example-text').textContent = concept.example;
         document.getElementById('question').textContent = concept.question;
         document.getElementById('user-answer').value = '';
@@ -205,7 +365,6 @@ const app = {
         if (correct) {
             feedback.textContent = "Correct!";
             feedback.style.color = "var(--accent)";
-            // Persist concept completion to backend (fire-and-forget)
             if (concept.id) {
                 this.persistProgress({ concept_id: concept.id, status: 'completed' });
             }
@@ -225,7 +384,6 @@ const app = {
 
     completeLesson: function () {
         this.currentLesson.completed = true;
-        // Persist lesson completion to backend (fire-and-forget)
         this.persistProgress({ lesson_id: this.currentLesson.id, status: 'completed' });
         this.renderDashboard();
         this.renderAchievements();
@@ -275,7 +433,6 @@ const app = {
         results.innerHTML = '<p style="color:var(--text-dim);">Searching content...</p>';
 
         try {
-            // Fetch both concepts and lessons in parallel
             const [conceptsRes, lessonsRes] = await Promise.all([
                 fetch(`${API_BASE}/concepts/`),
                 fetch(`${API_BASE}/api/lessons`)
@@ -287,7 +444,6 @@ const app = {
 
             const matches = [];
 
-            // Match concepts
             concepts.forEach(c => {
                 if (c.latest_version && c.latest_version.name.toLowerCase().includes(query)) {
                     matches.push({
@@ -299,7 +455,6 @@ const app = {
                 }
             });
 
-            // Match lessons
             lessons.forEach(l => {
                 if (l.title.toLowerCase().includes(query)) {
                     matches.push({

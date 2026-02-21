@@ -1,24 +1,42 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Bright Study - Offline Learning</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div id="network-alert">WARNING: No internet connection. Online features are unavailable.</div>
+    <div id="speed-test-overlay" class="overlay" style="display: none;">
+        <div class="overlay-content">
+            <div class="spinner"></div>
+            <h3>Testing Network Speed...</h3>
+            <p>Optimizing your experience based on connectivity.</p>
+        </div>
+    </div>
 
     <div id="gateway">
         <div class="gateway-card">
             <div class="logo-mark">BRIGHT STUDY</div>
-            <h1>Offline-First Learning</h1>
-            <p>Pick a mode to begin your session. Offline mode keeps everything local.</p>
-            <div class="gateway-actions">
-                <button class="gateway-btn primary" onclick="app.setMode('offline')">Study Offline</button>
-                <button class="gateway-btn" onclick="app.setMode('online')">Study Online</button>
+            <h1>Pick your Learning Mode</h1>
+            <p>We've detected your connection quality to help you decide.</p>
+
+            <div id="gateway-detection" class="detection-panel">
+                <div class="spinner-small" id="gateway-spinner"></div>
+                <div id="gateway-speed-msg">Auto-detecting network speed...</div>
+                <button class="retest-btn" onclick="app.runSpeedTest(true)" id="retest-btn"
+                    style="display:none">Retest</button>
             </div>
-            <div class="gateway-note">Tip: You can switch modes at any time.</div>
+
+            <div class="gateway-actions">
+                <button class="gateway-btn" id="offline-btn" onclick="app.setMode('offline')">Study Offline</button>
+                <button class="gateway-btn primary" id="online-btn" onclick="app.setMode('online')">Study
+                    Online</button>
+            </div>
+            <div class="gateway-note">Online mode enables high-quality videos and cloud updates.</div>
         </div>
     </div>
 
@@ -29,10 +47,12 @@
                 <div class="brand-name">Bright Study</div>
             </div>
             <div class="nav-item active" data-target="dashboard" onclick="app.showSection('dashboard')">Dashboard</div>
-            <div class="nav-item" data-target="achievements" onclick="app.showSection('achievements')">Achievements</div>
+            <div class="nav-item" data-target="achievements" onclick="app.showSection('achievements')">Achievements
+            </div>
             <div id="online-nav" class="nav-block">
                 <div class="nav-label">Online Only</div>
-                <div class="nav-item" data-target="more-lessons" onclick="app.showSection('more-lessons')">Add More Lessons</div>
+                <div class="nav-item" data-target="more-lessons" onclick="app.showSection('more-lessons')">Add More
+                    Lessons</div>
                 <div class="nav-item" data-target="updates" onclick="app.showSection('updates')">Updates</div>
             </div>
             <div class="sidebar-footer">
@@ -47,6 +67,7 @@
                     <h2 class="page-title">Stay consistent. Grow steady.</h2>
                 </div>
                 <div class="topbar-status">
+                    <span id="network-status" class="status-badge" style="display: none;"></span>
                     <span class="status-dot"></span>
                     <span class="status-text">Session Ready</span>
                 </div>
@@ -107,7 +128,9 @@
                         </div>
                         <div>
                             <div class="update-label">Installed</div>
-                            <ul id="installedList" class="update-list"><li>(unknown)</li></ul>
+                            <ul id="installedList" class="update-list">
+                                <li>(unknown)</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -120,6 +143,9 @@
                         <div id="concept-step" class="step-chip">STEP 1</div>
                         <h3 id="concept-title">Concept Name</h3>
                         <p id="explanation"></p>
+                        <div id="video-container" class="video-container" style="display: none; margin-bottom: 1.5rem;">
+                            <video id="lesson-video" controls width="100%" style="border-radius: 8px;"></video>
+                        </div>
                         <div class="example-box">
                             <div class="example-title">Example</div>
                             <p id="example-text"></p>
@@ -138,4 +164,5 @@
 
     <script src="main.js"></script>
 </body>
+
 </html>

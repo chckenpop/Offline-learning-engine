@@ -3,9 +3,21 @@
   "type": "concept",
   "explain": "Photosynthesis is the process by which green plants use sunlight, water, and carbon dioxide to make their own food and release oxygen.",
   "example": "Plants use photosynthesis during the day to produce food using sunlight.",
+  "videos": {
+    "low": "https://www.w3schools.com/html/mov_bbb.mp4",
+    "high": "https://www.w3schools.com/html/movie.mp4"
+  },
   "check": {
     "question": "What is photosynthesis?",
     "desired_answer": "Photosynthesis is the process by which plants use sunlight, water, and carbon dioxide to make food and release oxygen.",
-    "keywords": ["plants", "sunlight", "water", "carbon", "dioxide", "food", "oxygen"]
+    "keywords": [
+      "plants",
+      "sunlight",
+      "water",
+      "carbon",
+      "dioxide",
+      "food",
+      "oxygen"
+    ]
   }
 }

@@ -151,6 +151,19 @@ def change_status(
 
 
 # ------------------------------------------------------------------
+# Speed Test endpoint
+# ------------------------------------------------------------------
+@router.get("/api/speedtest")
+def speed_test():
+    """Returns 1MB of random data for speed testing."""
+    import os
+    from fastapi import Response
+    # Generate 1MB of random data
+    data = os.urandom(1024 * 1024)
+    return Response(content=data, media_type="application/octet-stream")
+
+
+# ------------------------------------------------------------------
 # Versioning endpoints
 # ------------------------------------------------------------------
 @router.get("/concepts/{concept_id}/versions")

@@ -20,6 +20,7 @@ class Handler(BaseHTTPRequestHandler):
     def _set_json(self, code=200):
         self.send_response(code)
         self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
 
     def do_GET(self):
@@ -32,11 +33,17 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html; charset=utf-8')
                 self.send_header('Content-Length', str(len(content)))
+                self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
                 self.wfile.write(content)
             except FileNotFoundError:
                 self.send_response(404)
                 self.end_headers()
+            return
+
+        if parsed.path == '/health':
+            self._set_json(200)
+            self.wfile.write(json.dumps({'status': 'ok'}).encode('utf-8'))
             return
 
         if parsed.path == '/api/preview':
@@ -106,6 +113,22 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
             return
 
+        if parsed.path.startswith('/api/speedtest'):
+            # Return 1MB of random data for speed testing
+            try:
+                data = os.urandom(1024 * 1024)
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/octet-stream')
+                self.send_header('Content-Length', str(len(data)))
+                # Add CORS header so it works from file:// or other origins
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                self._set_json(500)
+                self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+            return
+
         # static fallback
         static_path = os.path.join(UI_DIR, parsed.path.lstrip('/'))
         if os.path.exists(static_path) and os.path.isfile(static_path):
@@ -146,6 +169,13 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         self.send_response(404)
+        self.end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
 
 
