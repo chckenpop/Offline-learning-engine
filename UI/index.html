@@ -53,6 +53,8 @@
                 <div class="nav-label">Online Only</div>
                 <div class="nav-item" data-target="more-lessons" onclick="app.showSection('more-lessons')">Add More
                     Lessons</div>
+                <div id="video-nav" class="nav-item" data-target="search-videos"
+                    onclick="app.showSection('search-videos')" style="display: none;">Search Videos</div>
                 <div class="nav-item" data-target="updates" onclick="app.showSection('updates')">Updates</div>
             </div>
             <div class="sidebar-footer">
@@ -78,7 +80,13 @@
                     <h3>My Lessons</h3>
                     <p>Pick a lesson to start a focused, step-by-step flow.</p>
                 </div>
-                <div id="lesson-grid" class="lesson-grid"></div>
+                <div id="lesson-grid" class="lesson-grid" style="margin-bottom: 3rem;"></div>
+
+                <div class="section-head">
+                    <h3>My Videos</h3>
+                    <p>Access your downloaded videos anytime.</p>
+                </div>
+                <div id="video-grid" class="lesson-grid"></div>
             </section>
 
             <section id="achievements" class="view">
@@ -100,6 +108,21 @@
                         <button class="btn-primary" onclick="app.searchLessons()">Search</button>
                     </div>
                     <div id="search-results" class="results"></div>
+                </div>
+            </section>
+
+            <section id="search-videos" class="view">
+                <div class="section-head">
+                    <h3>Search Videos</h3>
+                    <p>Find and download high-quality educational videos.</p>
+                </div>
+                <div id="video-search-section">
+                    <div class="search-box">
+                        <input type="text" id="video-search-input"
+                            placeholder="Search for videos (e.g. Photosynthesis)">
+                        <button class="btn-primary" onclick="app.searchVideos()">Search</button>
+                    </div>
+                    <div id="video-search-results" class="results"></div>
                 </div>
             </section>
 

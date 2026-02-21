@@ -18,6 +18,7 @@ const app = {
     speedMBps: 0,
 
     lessons: [],
+    downloadedVideos: [],
 
     /**
      * INITIALIZATION
@@ -144,6 +145,13 @@ const app = {
         this.mode = mode;
         document.getElementById('gateway').style.display = 'none';
         document.getElementById('online-nav').style.display = mode === 'online' ? 'block' : 'none';
+
+        // Show/Hide Video Search based on network quality
+        const videoNav = document.getElementById('video-nav');
+        if (videoNav) {
+            videoNav.style.display = (mode === 'online' && (this.networkQuality === 'HIGH' || this.networkQuality === 'AVERAGE')) ? 'block' : 'none';
+        }
+
         this.checkNetwork();
     },
 
@@ -314,6 +322,77 @@ const app = {
             `;
             grid.appendChild(card);
         });
+
+        this.renderVideos();
+    },
+
+    /**
+     * RENDER VIDEOS IN DASHBOARD
+     */
+    renderVideos: function () {
+        const grid = document.getElementById('video-grid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+        if (!this.downloadedVideos || this.downloadedVideos.length === 0) {
+            grid.innerHTML = '<div style="color: var(--text-dim);">No videos downloaded yet.</div>';
+            return;
+        }
+
+        this.downloadedVideos.forEach(video => {
+            const card = document.createElement('div');
+            card.className = 'video-card-nested';
+            card.innerHTML = `
+                <div class="thumb-container">
+                    <img src="${video.thumb}" alt="${video.title}">
+                </div>
+                <div class="video-info">
+                    <h4>${video.title}</h4>
+                    <div class="meta-badges">
+                        <span class="badge accent">${video.length}</span>
+                    </div>
+                    <div class="video-actions">
+                        <button class="btn-primary" style="width: 100%; border-radius: 12px; font-size: 0.85rem;" onclick="app.playVideo('${video.title}', '${video.url}')">Play Video</button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    },
+
+    playVideo: function (titleText, url) {
+        this.showSection('classroom');
+        const videoContainer = document.getElementById('video-container');
+        const videoElement = document.getElementById('lesson-video');
+
+        // Hide unnecessary lesson elements
+        document.getElementById('concept-step').style.display = 'none';
+        document.querySelector('.example-box').style.display = 'none';
+        document.querySelector('.question-block').style.display = 'none';
+
+        // Dynamic title and cinematic sizing
+        const title = document.getElementById('concept-title');
+        title.textContent = titleText;
+        title.classList.add('centered-title');
+        document.getElementById('concept-ui').classList.add('wide-panel');
+        videoContainer.classList.add('wide-player');
+
+        document.getElementById('explanation').textContent = "";
+        document.getElementById('example-text').textContent = "";
+        document.getElementById('question').textContent = "";
+
+        videoElement.src = url;
+        videoContainer.style.display = 'block';
+    },
+
+    downloadVideo: function (video) {
+        if (!this.downloadedVideos.find(v => v.title === video.title)) {
+            this.downloadedVideos.push(video);
+            alert(`Video "${video.title}" downloaded successfully!`);
+            this.renderDashboard();
+        } else {
+            alert(`Video "${video.title}" is already downloaded.`);
+        }
     },
 
     /**
@@ -329,6 +408,15 @@ const app = {
     loadConcept: function () {
         const concept = this.currentLesson.concepts[this.currentConceptIndex];
         const total = this.currentLesson.concepts.length;
+
+        // Ensure lesson elements are visible
+        document.getElementById('concept-step').style.display = 'inline-flex';
+        document.querySelector('.example-box').style.display = 'block';
+        document.querySelector('.question-block').style.display = 'block';
+        document.getElementById('concept-title').classList.remove('centered-title');
+        document.getElementById('concept-ui').classList.remove('wide-panel');
+        document.getElementById('video-container').classList.remove('wide-player');
+
         document.getElementById('concept-step').textContent = `STEP ${this.currentConceptIndex + 1} OF ${total}`;
         document.getElementById('concept-title').textContent = concept.name;
         document.getElementById('explanation').textContent = concept.explain;
@@ -481,6 +569,77 @@ const app = {
             }
         } catch (err) {
             results.innerHTML = `<p style="color:var(--danger);">Error searching: ${err.message}</p>`;
+        }
+    },
+
+    /**
+     * SEARCH VIDEOS
+     */
+    /**
+     * SEARCH VIDEOS
+     */
+    searchVideos: async function () {
+        const input = document.getElementById('video-search-input');
+        const query = input.value.toLowerCase().trim();
+        const results = document.getElementById('video-search-results');
+
+        if (!query) return;
+
+        results.innerHTML = '<p style="color:var(--text-dim);">Searching videos...</p>';
+
+        try {
+            // Mocking detailed video search result logic
+            const mockVideos = [
+                {
+                    title: 'Photosynthesis Deep Dive',
+                    url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+                    thumb: 'assets/photosynthesis.png',
+                    length: '12:45',
+                    size: '45MB',
+                    resolution: '1080p'
+                },
+                {
+                    title: 'Cell Structure Explained',
+                    url: 'https://www.w3schools.com/html/movie.mp4',
+                    thumb: 'assets/cell_biology.png',
+                    length: '08:30',
+                    size: '28MB',
+                    resolution: '720p'
+                },
+                {
+                    title: 'Physics: Laws of Motion',
+                    url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+                    thumb: 'assets/physics.png',
+                    length: '15:20',
+                    size: '62MB',
+                    resolution: '1080p'
+                }
+            ].filter(v => v.title.toLowerCase().includes(query));
+
+            if (mockVideos.length > 0) {
+                results.innerHTML = mockVideos.map(v => `
+                    <div class="search-video-card">
+                        <div class="thumb-container">
+                            <img src="${v.thumb}" alt="${v.title}">
+                        </div>
+                        <div class="video-info">
+                            <h4>${v.title}</h4>
+                            <div class="meta-badges">
+                                <span class="badge accent">${v.length}</span>
+                                <span class="badge">${v.resolution}</span>
+                                <span class="badge">${v.size}</span>
+                            </div>
+                            <div class="video-actions">
+                                <button class="add-btn" onclick='app.downloadVideo(${JSON.stringify(v)})'>DOWNLOAD</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                results.innerHTML = '<p style="color:var(--text-dim);">No matching videos found.</p>';
+            }
+        } catch (err) {
+            results.innerHTML = `<p style="color:var(--danger);">Error searching videos: ${err.message}</p>`;
         }
     },
 
