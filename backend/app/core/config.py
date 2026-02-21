@@ -23,3 +23,7 @@ CONTENT_DIR: str = os.path.join(PROJECT_DIR, "content")
 LESSONS_DIR: str = os.path.join(CONTENT_DIR, "lessons")
 CONCEPTS_DIR: str = os.path.join(CONTENT_DIR, "concepts")
 PROGRESS_DB_PATH: str = os.path.join(PROJECT_DIR, "database", "progress.db")
+
+# Supabase Config
+SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://njqlzvelsatdwzwynyek.supabase.co")
+SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "sb_publishable_NOFcz2mruM_oYS8NaKWlIg_lrXZqXEM")

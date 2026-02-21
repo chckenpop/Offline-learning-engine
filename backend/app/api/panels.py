@@ -1,20 +1,69 @@
-"""Panels API — comments, diffs, warnings; plus content delivery and updater endpoints."""
-from __future__ import annotations
 import io
 import json
 import os
 import sqlite3
 import sys
 from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+import requests
 
 from app.api.auth import get_current_user, optional_current_user
-from app.core.config import LESSONS_DIR, CONCEPTS_DIR, PROGRESS_DB_PATH
+from app.core.config import LESSONS_DIR, CONCEPTS_DIR, PROGRESS_DB_PATH, SUPABASE_URL, SUPABASE_KEY
 from app.persistence.db import get_connection
 
 router = APIRouter(tags=["panels"])
+
+# Headers for Supabase Proxy
+HEADERS = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+    "Content-Type": "application/json"
+}
+
+# ------------------------------------------------------------------
+# Cloud Search (Supabase Proxy)
+# ------------------------------------------------------------------
+@router.get("/api/search")
+def search_supabase(q: str = Query(..., min_length=1)):
+    """Search lessons and concepts directly from Supabase delivery tables."""
+    try:
+        # Search Lessons
+        lessons_res = requests.get(
+            f"{SUPABASE_URL}/rest/v1/delivery_lessons?select=lesson_id,version,json_data&json_data->>title=ilike.*{q}*",
+            headers=HEADERS
+        )
+        lessons_res.raise_for_status()
+        lessons = lessons_res.json()
+
+        # Search Concepts
+        concepts_res = requests.get(
+            f"{SUPABASE_URL}/rest/v1/delivery_concepts?select=id,version,json_data&json_data->>name=ilike.*{q}*",
+            headers=HEADERS
+        )
+        concepts_res.raise_for_status()
+        concepts = concepts_res.json()
+
+        results = []
+        for l in lessons:
+            results.append({
+                "id": l["lesson_id"],
+                "title": l["json_data"].get("title", "Untitled Lesson"),
+                "type": "Lesson",
+                "version": l["version"]
+            })
+        
+        for c in concepts:
+            results.append({
+                "id": c["id"],
+                "title": c["json_data"].get("name", "Untitled Concept"),
+                "type": "Concept",
+                "version": c["version"]
+            })
+
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Supabase search failed: {str(e)}")
 
 
 # ------------------------------------------------------------------
