@@ -1,0 +1,20 @@
+{
+  "title": "Gravity Intro (Beginner)",
+  "intro": "Let's explore the basics of gravity. Gravity is like a super-strong magnet pulling things together.",
+  "outro": "Well done! You've grasped the beginner level of gravity concepts.",
+  "concepts": [
+    {
+      "name": "Gravity Basics",
+      "explain": "Gravity is similar to a magnet attracting objects towards each other. It's the force that keeps us on the ground and makes things fall when we release them.",
+      "example": "Imagine a ball rolling down a slope. Gravity is the reason the ball moves down instead of up.",
+      "check": {
+        "question": "What is gravity compared to in the simplified explanation?",
+        "keywords": [
+          "magnet",
+          "attracts"
+        ]
+      }
+    }
+  ],
+  "lesson_id": "gravity_intro_beginner_beginner"
+}

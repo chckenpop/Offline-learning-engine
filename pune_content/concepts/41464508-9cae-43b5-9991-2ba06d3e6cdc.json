@@ -1,0 +1,19 @@
+{
+  "id": "41464508-9cae-43b5-9991-2ba06d3e6cdc",
+  "type": "concept",
+  "board": null,
+  "check": {
+    "keywords": [
+      "gravity",
+      "pulls",
+      "earth",
+      "objects"
+    ],
+    "question": "What does gravity do?",
+    "desired_answer": "Gravity pulls objects toward Earth."
+  },
+  "grade": null,
+  "example": "A dropped ball falls down",
+  "explain": "Gravity is an attractive force between masses.",
+  "version": "2.0"
+}

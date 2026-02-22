@@ -1,0 +1,14 @@
+{
+  "id": "6a597864-bfbb-4f46-997d-cdef5f2b1c94",
+  "type": "concept",
+  "board": null,
+  "check": {
+    "keywords": [],
+    "question": "",
+    "desired_answer": ""
+  },
+  "grade": null,
+  "example": "Apple falling",
+  "explain": "Gravity attracts objects with mass.",
+  "version": "2.0"
+}

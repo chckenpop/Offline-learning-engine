@@ -8,11 +8,12 @@ from updater import run_update, preview_updates
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(BASE_DIR)
-DB_PATH = os.path.join(PROJECT_DIR, "database", "progress.db")
-CONTENT_DIR = os.path.join(PROJECT_DIR, "content")
-LESSONS_DIR = os.path.join(CONTENT_DIR, "lessons")
-CONCEPTS_DIR = os.path.join(CONTENT_DIR, "concepts")
-INDEX_FILE = os.path.join(LESSONS_DIR, "index.json")
+PUNE_CONTENT_DIR = os.path.join(PROJECT_DIR, "pune_content")
+DB_PATH = os.path.join(PUNE_CONTENT_DIR, "metadata.db")
+LESSONS_DIR = os.path.join(PUNE_CONTENT_DIR, "lessons")
+CONCEPTS_DIR = os.path.join(PUNE_CONTENT_DIR, "concepts")
+# Optional: index.json is now legacy if we use the lessons folder directly, 
+# but I'll keep the variable for compatibility if needed.
 
 
 # -------------------- SIMPLE TERMINAL UI --------------------
@@ -63,16 +64,17 @@ def init_db():
         )
     """)
 
-    # Track installed content versions
+    # Track installed content versions (Merged with updater's requirement)
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS installed_content (
-            content_id TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS cached_content (
+            id TEXT NOT NULL,
             type TEXT NOT NULL,
-            version TEXT,
-            PRIMARY KEY (content_id, type)
+            version INTEGER NOT NULL,
+            PRIMARY KEY (id, type)
         )
     """)
-    # Optional aliases mapping (alias -> canonical content id)
+    
+    # Optional aliases mapping
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS content_aliases (
             alias TEXT PRIMARY KEY,
@@ -80,7 +82,6 @@ def init_db():
         )
     """)
     
-
     conn.commit()
     conn.close()
 
@@ -180,8 +181,22 @@ def load_lesson(path):
         return json.load(f)
 
 def load_lesson_index():
-    with open(INDEX_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    # Dynamically build index from lessons folder if index.json is missing
+    lessons = []
+    if os.path.exists(LESSONS_DIR):
+        for f in os.listdir(LESSONS_DIR):
+            if f.endswith(".json"):
+                 with open(os.path.join(LESSONS_DIR, f), "r", encoding="utf-8") as jf:
+                     try:
+                         data = json.load(jf)
+                         lessons.append({
+                             "lesson_id": data.get("id") or f.replace(".json", ""),
+                             "title": data.get("title", f),
+                             "path": f
+                         })
+                     except:
+                         pass
+    return {"lessons": lessons}
 
 
 

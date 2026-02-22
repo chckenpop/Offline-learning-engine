@@ -1,0 +1,35 @@
+{
+  "delivery_lessons_status": 200,
+  "sample": [
+    {
+      "lesson_id": "introduction_to_gravity",
+      "version": "4.0",
+      "json_data": {
+        "intro": "Learn gravity basics",
+        "outro": "You completed Introduction to Gravity",
+        "title": "Introduction to Gravity",
+        "version": "4.0",
+        "concepts": [
+          "8f0300d7-0580-44cb-9553-f9af17c18cfc"
+        ],
+        "lesson_id": "introduction_to_gravity"
+      },
+      "updated_at": "2026-02-19T06:51:49.321837"
+    },
+    {
+      "lesson_id": "gravity_intro",
+      "version": "1.0",
+      "json_data": {
+        "intro": "Learn gravity basics",
+        "outro": "You completed Gravity Intro",
+        "title": "Gravity Intro",
+        "version": "1.0",
+        "concepts": [
+          "41464508-9cae-43b5-9991-2ba06d3e6cdc"
+        ],
+        "lesson_id": "gravity_intro"
+      },
+      "updated_at": "2026-02-21T17:56:22.682134"
+    }
+  ]
+}

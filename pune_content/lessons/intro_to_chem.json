@@ -1,0 +1,11 @@
+{
+  "intro": "Chem's Intro",
+  "outro": "You completed Intro to Chem",
+  "title": "Intro to Chem",
+  "version": "2.0",
+  "concepts": [
+    "6a597864-bfbb-4f46-997d-cdef5f2b1c94"
+  ],
+  "lesson_id": "intro_to_chem",
+  "order_index": 0
+}

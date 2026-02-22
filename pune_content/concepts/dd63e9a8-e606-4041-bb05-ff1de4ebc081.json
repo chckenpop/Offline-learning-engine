@@ -1,0 +1,14 @@
+{
+  "id": "dd63e9a8-e606-4041-bb05-ff1de4ebc081",
+  "type": "concept",
+  "board": null,
+  "check": {
+    "keywords": [],
+    "question": "",
+    "desired_answer": ""
+  },
+  "grade": null,
+  "example": "ex1",
+  "explain": "Detailed",
+  "version": "2.0"
+}

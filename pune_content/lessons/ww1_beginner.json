@@ -1,0 +1,20 @@
+{
+  "title": "WW1 (Beginner)",
+  "intro": "Let's learn about a few key concepts from World War 1 (WW1), a significant event in history.",
+  "outro": "Congratulations! You have completed learning about WW1.",
+  "concepts": [
+    {
+      "name": "Introduction to WW1",
+      "explain": "WW1 was a major war that took place in the early 20th century involving many countries. It was a time of great conflict and change.",
+      "example": "Imagine countries fighting against each other like players in a game trying to win control over certain areas.",
+      "check": {
+        "question": "What was World War 1 known for?",
+        "keywords": [
+          "countries",
+          "conflict"
+        ]
+      }
+    }
+  ],
+  "lesson_id": "ww1_beginner"
+}

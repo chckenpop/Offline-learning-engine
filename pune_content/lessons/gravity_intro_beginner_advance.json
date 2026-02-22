@@ -1,0 +1,24 @@
+{
+  "title": "Gravity Intro (Advance)",
+  "intro": "Welcome to the advanced level of understanding gravity. In this lesson, we will delve deeper into the complexities of gravity and its effects on the universe.",
+  "outro": "Congratulations! You have completed the advanced level of understanding gravity. You are now equipped with a deeper knowledge of this fundamental force in nature.",
+  "concepts": [
+    {
+      "id": "gravity_concept_advanced",
+      "name": "Gravity Advanced Concepts",
+      "explain": "Gravity is not just a force that pulls objects towards each other, but also warps space-time according to Einstein's general theory of relativity. This warping of space-time is what creates the gravitational attraction between objects.",
+      "example": "Consider the analogy of placing a heavy ball on a stretched rubber sheet. The ball creates a dent in the sheet, causing smaller objects placed on it to move towards the ball. This visualization represents how massive objects like planets warp the fabric of space-time around them, leading to gravitational effects.",
+      "check": {
+        "question": "According to Einstein's general theory of relativity, how does gravity affect space-time?",
+        "desired_answer": "Gravity warps space-time, creating the gravitational attraction between objects.",
+        "keywords": [
+          "einstein",
+          "general theory of relativity",
+          "space-time",
+          "gravitational attraction"
+        ]
+      }
+    }
+  ],
+  "lesson_id": "gravity_intro_beginner_advance"
+}

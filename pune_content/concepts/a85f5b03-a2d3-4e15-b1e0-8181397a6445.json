@@ -1,0 +1,16 @@
+{
+  "id": "a85f5b03-a2d3-4e15-b1e0-8181397a6445",
+  "type": "concept",
+  "board": null,
+  "check": {
+    "keywords": [
+      "chlorophyll"
+    ],
+    "question": "What is the green pigment in photosyntehis called",
+    "desired_answer": "Chlorophyll"
+  },
+  "grade": null,
+  "example": "",
+  "explain": "Photosynthesis is the process by which green plants, algae, and some bacteria convert light energy, usually from the sun, into chemical energy stored in glucose molecules. This process involves several steps:\n\n1. Light Absorption: Chlorophyll, a green pigment found in chloroplasts of plant cells, absorbs light energy.\n\n2. Water Splitting: Light energy is used to split water molecules into oxygen, protons, and electrons. This reaction occurs in the thylakoid membranes of the chloroplast.\n\n3. Electron Transport Chain: The excited electrons from water splitting are passed through a series of proteins in the thylakoid membrane, creating a proton gradient.\n\n4. ATP Synthesis: The proton gradient drives the synthesis of ATP (adenosine triphosphate), a molecule that stores energy.\n\n5. Carbon Fixation: In the Calvin Cycle, ATP and NADPH (another energy carrier) are used to convert carbon dioxide from the air into glucose molecules. This process occurs in the stroma of the chloroplast.\n\n6. Glucose Production: The glucose molecules produced in the Calvin Cycle can be used for energy by the plant or stored for later use.\n\nOverall, photosynthesis is a crucial process for life on Earth as it provides oxygen for respiration and serves as the foundation of the food chain.",
+  "version": "3.0"
+}

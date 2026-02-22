@@ -1,0 +1,24 @@
+{
+  "id": "e86a3388-538e-479f-a016-94e31f82b7a6",
+  "type": "concept",
+  "board": null,
+  "check": {
+    "keywords": [
+      "Strong military",
+      "aggressive use of force",
+      "national interests",
+      "military spending",
+      "expansion of armed forces",
+      "glorification of military power",
+      "military solutions",
+      "preparedness for war",
+      "increased tensions before World War I"
+    ],
+    "question": "Explain the concept of Militarism in the context of World War I.",
+    "desired_answer": "Militarism is the belief or policy of a government or society to maintain a strong military and to be prepared to use it aggressively to defend or promote national interests. It involves the glorification of military power, increased military spending, expansion of armed forces, and the belief that military solutions are effective in resolving conflicts. Before World War I, European nations practiced militarism by building large armies and navies, which increased tensions and contributed to the outbreak of war. Militarism can have both positive and negative consequences depending on the situation in which it is applied."
+  },
+  "grade": null,
+  "example": "",
+  "explain": "",
+  "version": "3.0"
+}

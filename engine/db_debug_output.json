@@ -1,0 +1,25 @@
+{
+  "delivery_subjects_status": 200,
+  "delivery_subjects_sample": [
+    {
+      "id": "fbcab5fe-51b4-4fbe-8027-78b63acb2e87",
+      "course_id": "e045d1d6-fab8-45f8-8ec6-ae25634f705e",
+      "title": "Physics",
+      "json_data": {
+        "id": "fbcab5fe-51b4-4fbe-8027-78b63acb2e87",
+        "title": "Physics",
+        "lessons": [
+          {
+            "lesson_id": "bdbbe59a-a413-4024-8c36-b34e72689b45",
+            "order_index": 1
+          }
+        ],
+        "course_id": "e045d1d6-fab8-45f8-8ec6-ae25634f705e",
+        "description": "Introductory Physics"
+      },
+      "updated_at": "2026-02-21T18:57:43.15445+00:00"
+    }
+  ],
+  "delivery_subject_status": 404,
+  "delivery_subject_sample": "{\"code\":\"PGRST205\",\"details\":null,\"hint\":\"Perhaps you meant the table 'public.delivery_subjects'\",\"message\":\"Could not find the table 'public.delivery_subject' in the schema cache\"}"
+}

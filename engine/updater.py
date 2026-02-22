@@ -2,6 +2,7 @@ import requests
 import sqlite3
 import json
 import os
+import shutil
 
 # ==============================
 # 🔑 CONFIG (ADD YOUR KEYS HERE)
@@ -12,6 +13,7 @@ SUPABASE_KEY = "sb_publishable_NOFcz2mruM_oYS8NaKWlIg_lrXZqXEM"
 
 LESSONS_ENDPOINT = f"{SUPABASE_URL}/rest/v1/delivery_lessons"
 CONCEPTS_ENDPOINT = f"{SUPABASE_URL}/rest/v1/delivery_concepts"
+VIDEOS_ENDPOINT = f"{SUPABASE_URL}/rest/v1/videos"
 
 HEADERS = {
     "apikey": SUPABASE_KEY,
@@ -20,295 +22,313 @@ HEADERS = {
 }
 
 # ==============================
-# 📁 PATHS
+# 📁 NEW DIRECTORY STRUCTURE (Sync-to-Edge)
 # ==============================
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-CONTENT_DIR = os.path.join(BASE_DIR, "content")
-LESSONS_DIR = os.path.join(CONTENT_DIR, "lessons")
-CONCEPTS_DIR = os.path.join(CONTENT_DIR, "concepts")
-DB_PATH = os.path.join(BASE_DIR, "database", "progress.db")
-INDEX_FILE = os.path.join(LESSONS_DIR, "index.json")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PUNE_CONTENT_DIR = os.path.join(BASE_DIR, "pune_content")
+LESSONS_DIR = os.path.join(PUNE_CONTENT_DIR, "lessons")
+CONCEPTS_DIR = os.path.join(PUNE_CONTENT_DIR, "concepts")
+ASSETS_DIR = os.path.join(PUNE_CONTENT_DIR, "assets")
+THUMBNAILS_DIR = os.path.join(ASSETS_DIR, "thumbnails")
+VIDEOS_DIR = os.path.join(ASSETS_DIR, "videos")
+DB_PATH = os.path.join(PUNE_CONTENT_DIR, "metadata.db")
 
+# Ensure directories exist
+for d in [LESSONS_DIR, CONCEPTS_DIR, THUMBNAILS_DIR, VIDEOS_DIR]:
+    os.makedirs(d, exist_ok=True)
 
 # ==============================
 # 🗄️ DB FUNCTIONS
 # ==============================
 
 def get_db():
-    return sqlite3.connect(DB_PATH)
-
+    conn = sqlite3.connect(DB_PATH)
+    # Ensure tables exist according to the new spec (tracking versions)
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS cached_content (
+            id TEXT NOT NULL,
+            type TEXT NOT NULL,
+            version INTEGER NOT NULL,
+            PRIMARY KEY (id, type)
+        )
+    """)
+    conn.commit()
+    return conn
 
 def get_installed_version(content_id, ctype):
     conn = get_db()
     cur = conn.cursor()
-
-    cur.execute("""
-        SELECT version FROM installed_content
-        WHERE content_id=? AND type=?
-    """, (content_id, ctype))
-
+    cur.execute("SELECT version FROM cached_content WHERE id=? AND type=?", (content_id, ctype))
     row = cur.fetchone()
     conn.close()
     return row[0] if row else None
 
-
 def upsert_installed(content_id, ctype, version):
     conn = get_db()
     cur = conn.cursor()
-
-    cur.execute("""
-        INSERT OR REPLACE INTO installed_content(content_id, type, version)
-        VALUES (?, ?, ?)
-    """, (content_id, ctype, version))
-
+    cur.execute("INSERT OR REPLACE INTO cached_content (id, type, version) VALUES (?, ?, ?)", 
+                (content_id, ctype, version))
     conn.commit()
     conn.close()
 
-
 # ==============================
-# 📥 FETCH FROM SUPABASE
+# 📥 SYNC HELPERS
 # ==============================
 
-def fetch_lessons():
-    res = requests.get(
-        LESSONS_ENDPOINT + "?select=lesson_id,version,json_data",
-        headers=HEADERS
-    )
-    res.raise_for_status()
-    return res.json()
-
-
-def fetch_concepts():
-    res = requests.get(
-        CONCEPTS_ENDPOINT + "?select=id,version,json_data",
-        headers=HEADERS
-    )
-    res.raise_for_status()
-    return res.json()
-
-
-def fetch_concept_detail(concept_id, current_version=None):
-    """Fetch single concept detail using delivery endpoint.
-
-    Expected response JSON keys:
-      - concept: full concept JSON
-      - delivery_version: server version
-      - update_available: bool (if current_version provided)
-      - contract_version
-    """
-    url = f"{SUPABASE_URL}/delivery/concepts/{concept_id}"
-    params = {}
-    if current_version:
-        params['current_version'] = current_version
-
-    res = requests.get(url, headers=HEADERS, params=params)
-    # If endpoint not available or error, fall back to fetching all and filtering
-    if res.status_code != 200:
-        # fallback: try to find in bulk list
-        try:
-            all_concepts = fetch_concepts()
-            for c in all_concepts:
-                if c.get('id') == concept_id:
-                    return {
-                        'concept': c.get('json_data'),
-                        'delivery_version': c.get('version'),
-                        'update_available': (current_version != c.get('version')) if current_version is not None else True,
-                        'contract_version': 'v1'
-                    }
-        except Exception:
-            res.raise_for_status()
-
-    res.raise_for_status()
-    return res.json()
-
-
-def preview_updates():
-    """Return a preview dict of what would be downloaded/updated/skipped.
-
-    Structure:
-    {
-      'concepts': {'new': [id], 'update': [id], 'skip': [id]},
-      'lessons': {'new': [id], 'update': [id], 'skip': [id]}
-    }
-    """
+def download_file(url, dest_path, expected_size=None):
+    """Download a file with verification and cleanup on failure."""
+    print(f"  ⬇️ Downloading: {url}")
+    temp_path = dest_path + ".tmp"
     try:
-        lessons = fetch_lessons()
-        concepts = fetch_concepts()
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(temp_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        
+        # Verification
+        if expected_size:
+            # expected_size might be a string like "15.4 MB" or an int
+            actual_size = os.path.getsize(temp_path)
+            # Rough conversion if it's a string, or just skip if we don't want to parse it now
+            # For now, if it's an int, compare directly.
+            if isinstance(expected_size, int) and actual_size != expected_size:
+                 raise Exception(f"Size mismatch: expected {expected_size}, got {actual_size}")
+        
+        os.replace(temp_path, dest_path)
+        return True
     except Exception as e:
-        raise
-
-    result = {'concepts': {'new': [], 'update': [], 'skip': []},
-              'lessons': {'new': [], 'update': [], 'skip': []}}
-
-    for c in concepts:
-        cid = c['id']
-        version = c.get('version')
-        installed = get_installed_version(cid, 'concept')
-
-        if not installed:
-            result['concepts']['new'].append({'id': cid, 'version': version})
-        elif installed == version:
-            result['concepts']['skip'].append({'id': cid, 'version': version})
-        else:
-            result['concepts']['update'].append({'id': cid, 'version': version, 'installed': installed})
-
-    for l in lessons:
-        lid = l['lesson_id']
-        version = l.get('version')
-        installed = get_installed_version(lid, 'lesson')
-
-        if not installed:
-            result['lessons']['new'].append({'id': lid, 'version': version})
-        elif installed == version:
-            result['lessons']['skip'].append({'id': lid, 'version': version})
-        else:
-            result['lessons']['update'].append({'id': lid, 'version': version, 'installed': installed})
-
-    return result
-
-
-# ==============================
-# 📁 FILE INSTALL HELPERS
-# ==============================
+        print(f"  ⚠️ Download failed: {e}")
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return False
 
 def save_json(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-
-def update_index(lesson_id, title):
-    if os.path.exists(INDEX_FILE):
-        with open(INDEX_FILE, "r", encoding="utf-8") as f:
-            index = json.load(f)
-    else:
-        index = {"lessons": []}
-
-    # remove existing
-    index["lessons"] = [l for l in index["lessons"] if l["lesson_id"] != lesson_id]
-
-    index["lessons"].append({
-        "lesson_id": lesson_id,
-        "title": title,
-        "path": f"{lesson_id}.json"
-    })
-
-    save_json(INDEX_FILE, index)
-
-
 # ==============================
-# 🚀 MAIN UPDATE FUNCTION
+# 🚀 SYNC PROTOCOL
 # ==============================
+
+def sync_video(video_id):
+    print(f"  🔍 Fetching independent Video: {video_id}")
+    try:
+        res = requests.get(f"{VIDEOS_ENDPOINT}?id=eq.{video_id}", headers=HEADERS)
+        res.raise_for_status()
+        if not res.json():
+            print(f"  ❌ Video {video_id} not found.")
+            return False
+        
+        v_data = res.json()[0]
+        video_url = v_data.get('url')
+        thumb_url = v_data.get('thumbnail_url')
+        
+        if not video_url:
+            print(f"  ❌ Video {video_id} has no URL.")
+            return False
+
+        all_assets_success = True
+        
+        # Determine extension and download video
+        ext = ".mp4" if ".mp4" in video_url.lower() else ".mp4"
+        video_path = os.path.join(VIDEOS_DIR, f"{video_id}{ext}")
+        if not os.path.exists(video_path):
+            success = download_file(video_url, video_path)
+            if not success: all_assets_success = False
+
+        # Download thumbnail if present
+        if thumb_url:
+            t_ext = ".jpg" if ".jpg" in thumb_url.lower() else ".png"
+            thumb_path = os.path.join(THUMBNAILS_DIR, f"{video_id}{t_ext}")
+            if not os.path.exists(thumb_path):
+                t_success = download_file(thumb_url, thumb_path)
+                if t_success:
+                    v_data['local_thumb'] = f"assets/thumbnails/{video_id}{t_ext}"
+        
+        if all_assets_success:
+            v_data['local_video'] = f"assets/videos/{video_id}{ext}"
+            save_json(os.path.join(VIDEOS_DIR, f"{video_id}.json"), v_data)
+            print(f"  ✅ Video {video_id} fully synced.")
+            return True
+        return False
+    except Exception as e:
+        print(f"  ❌ Failed to fetch Video {video_id}: {e}")
+        return False
+
+
+def sync_concept(concept_id, remote_version=1):
+    print(f"  🔍 Fetching independent Concept: {concept_id}")
+    try:
+        c_res = requests.get(f"{CONCEPTS_ENDPOINT}?id=eq.{concept_id}&select=json_data,version", headers=HEADERS)
+        c_res.raise_for_status()
+        c_data = c_res.json()[0]
+        concept = c_data['json_data']
+        if isinstance(concept, str):
+            concept = json.loads(concept)
+        concept['id'] = concept_id
+        concept['version'] = c_data.get('version') or 1
+
+        # Check if concept needs update
+        if get_installed_version(concept_id, 'concept') != concept['version']:
+            print(f"  📝 Syncing Concept: {concept_id} (v{concept['version']})")
+            save_json(os.path.join(CONCEPTS_DIR, f"{concept_id}.json"), concept)
+
+        all_assets_success = True
+        videos = concept.get('videos', [])
+        for video in videos:
+            video_id = video.get('id')
+            video_url = video.get('url')
+            if not video_url: continue
+            
+            ext = ".mp4" if ".mp4" in video_url.lower() else ".mp4"
+            video_path = os.path.join(VIDEOS_DIR, f"{video_id}{ext}")
+            
+            if not os.path.exists(video_path):
+                success = download_file(video_url, video_path)
+                if not success:
+                    all_assets_success = False
+
+        if all_assets_success:
+            upsert_installed(concept_id, 'concept', concept['version'])
+            return True
+        return False
+    except Exception as e:
+        print(f"  ❌ Failed to fetch Concept {concept_id}: {e}")
+        return False
+
+def sync_lesson(lesson_id, remote_version):
+    print(f"📦 Fetching payload for Lesson: {lesson_id} (v{remote_version})")
+    try:
+        res = requests.get(f"{LESSONS_ENDPOINT}?lesson_id=eq.{lesson_id}&select=json_data", headers=HEADERS)
+        res.raise_for_status()
+        row = res.json()[0]
+        payload_data = row['json_data']
+        
+        if isinstance(payload_data, str):
+            payload_data = json.loads(payload_data)
+        
+        # order_index might be inside json_data, if not we default to 0
+        if 'order_index' not in payload_data:
+            payload_data['order_index'] = 0
+        
+        save_json(os.path.join(LESSONS_DIR, f"{lesson_id}.json"), payload_data)
+        
+        concepts_data = payload_data.get('concepts', [])
+        all_assets_success = True
+        
+        for c_entry in concepts_data:
+            concept = None
+            if isinstance(c_entry, dict):
+                concept = c_entry
+            else:
+                success = sync_concept(c_entry)
+                if not success:
+                    all_assets_success = False
+                continue
+
+            concept_id = concept.get('id')
+            concept_version = concept.get('version') or 1
+            
+            if get_installed_version(concept_id, 'concept') != concept_version:
+                print(f"  📝 Syncing Concept: {concept_id} (v{concept_version})")
+                save_json(os.path.join(CONCEPTS_DIR, f"{concept_id}.json"), concept)
+            
+            videos = concept.get('videos', [])
+            for video in videos:
+                video_id = video.get('id')
+                video_url = video.get('url')
+                if not video_url: continue
+                
+                ext = ".mp4" if ".mp4" in video_url.lower() else ".mp4"
+                video_path = os.path.join(VIDEOS_DIR, f"{video_id}{ext}")
+                
+                if not os.path.exists(video_path):
+                    success = download_file(video_url, video_path)
+                    if not success:
+                        all_assets_success = False
+
+            if all_assets_success:
+                upsert_installed(concept_id, 'concept', concept_version)
+
+        if all_assets_success:
+            upsert_installed(lesson_id, 'lesson', remote_version)
+            print(f"🌸 Lesson '{payload_data.get('title')}' fully synced.")
+        else:
+            print(f"⚠️ Lesson '{payload_data.get('title')}' partially synced. Retrying next time.")
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"❌ Failed to sync Lesson {lesson_id}: {e}")
 
 def run_update():
-    print("\n🔄 Checking for updates...\n")
-
+    print("\n🔄 Background Sync Protocol Started\n")
     try:
-        lessons = fetch_lessons()
-        concepts = fetch_concepts()
-    except Exception:
-        print("❌ No internet or Supabase unreachable.\n")
+        res = requests.get(LESSONS_ENDPOINT + "?select=lesson_id,version", headers=HEADERS)
+        res.raise_for_status()
+        remote_lessons = res.json()
+    except Exception as e:
+        print(f"❌ Discovery Phase failed: {e}")
         return
 
-    new_count = 0
-    update_count = 0
-    skip_count = 0
+    for rl in remote_lessons:
+        lesson_id = rl['lesson_id']
+        remote_version = rl.get('version') or 1
+        local_version = get_installed_version(lesson_id, 'lesson')
 
-    # --------------------------
-    # 📦 INSTALL CONCEPTS FIRST (per-concept endpoint)
-    # --------------------------
-    for c in concepts:
-        cid = c.get("id")
-        installed = get_installed_version(cid, "concept")
+        # LAZY LOADING: Only sync if already installed locally and needs update
+        if local_version is None:
+            continue
+        if local_version == remote_version:
+            continue
+        
+        sync_lesson(lesson_id, remote_version)
 
+    print("\n✅ Background Sync complete.\n")
+
+def download_specific_item(item_id, item_type):
+    print(f"\n📥 On-Demand Download started for {item_type}: {item_id}\n")
+    if item_type.lower() == 'lesson':
         try:
-            detail = fetch_concept_detail(cid, current_version=installed)
-        except Exception:
-            # fallback to bulk payload if per-concept endpoint fails
-            version = c.get("version")
-            data = c.get("json_data")
-            if not installed:
-                action = "new"
-            elif installed == version:
-                skip_count += 1
-                continue
+            res = requests.get(f"{LESSONS_ENDPOINT}?lesson_id=eq.{item_id}&select=version", headers=HEADERS)
+            if res.ok and len(res.json()) > 0:
+                rv = res.json()[0].get('version') or 1
+                sync_lesson(item_id, rv)
             else:
-                action = "update"
+                print(f"❌ Lesson {item_id} not found in cloud.")
+        except Exception as e:
+            print(f"❌ Failed to initiate specific lesson sync: {e}")
+    elif item_type.lower() == 'concept':
+        sync_concept(item_id)
+    elif item_type.lower() == 'video':
+        sync_video(item_id)
 
-            path = os.path.join(CONCEPTS_DIR, f"{cid}.json")
-            save_json(path, data)
-            upsert_installed(cid, "concept", version)
+def preview_updates():
+    """Simple implementation of preview using local state."""
+    try:
+        res = requests.get(LESSONS_ENDPOINT + "?select=lesson_id,version", headers=HEADERS)
+        res.raise_for_status()
+        remote_lessons = res.json()
+    except Exception:
+        return None
 
-            if action == "new":
-                new_count += 1
-                print(f"📦 Installed concept: {cid}")
-            else:
-                update_count += 1
-                print(f"♻️ Updated concept: {cid}")
-            continue
-
-        # detail expected shape: {'concept':..., 'delivery_version':..., 'update_available':bool}
-        if isinstance(detail, dict) and 'concept' in detail:
-            data = detail['concept']
-            delivery_version = detail.get('delivery_version') or detail.get('version')
-            update_available = detail.get('update_available', True)
+    result = {'lessons': {'new': [], 'update': [], 'skip': []}}
+    for rl in remote_lessons:
+        lid = rl['lesson_id']
+        rv = rl['version']
+        lv = get_installed_version(lid, 'lesson')
+        
+        if not lv:
+            result['lessons']['new'].append({'id': lid, 'version': rv})
+        elif lv != rv:
+            result['lessons']['update'].append({'id': lid, 'version': rv, 'installed': lv})
         else:
-            # unexpected shape; try to use bulk record
-            data = c.get('json_data')
-            delivery_version = c.get('version')
-            update_available = (installed != delivery_version)
+            result['lessons']['skip'].append({'id': lid, 'version': rv})
+    
+    return result
 
-        if not installed:
-            action = 'new'
-        elif not update_available:
-            skip_count += 1
-            continue
-        else:
-            action = 'update'
-
-        path = os.path.join(CONCEPTS_DIR, f"{cid}.json")
-        save_json(path, data)
-        upsert_installed(cid, 'concept', delivery_version)
-
-        if action == 'new':
-            new_count += 1
-            print(f"📦 Installed concept: {cid}")
-        else:
-            update_count += 1
-            print(f"♻️ Updated concept: {cid}")
-
-    # --------------------------
-    # 📦 INSTALL LESSONS
-    # --------------------------
-    for l in lessons:
-        lid = l["lesson_id"]
-        version = l["version"]
-        data = l["json_data"]
-
-        installed = get_installed_version(lid, "lesson")
-
-        if not installed:
-            action = "new"
-        elif installed == version:
-            skip_count += 1
-            continue
-        else:
-            action = "update"
-
-        path = os.path.join(LESSONS_DIR, f"{lid}.json")
-        save_json(path, data)
-        upsert_installed(lid, "lesson", version)
-
-        update_index(lid, data.get("title", lid))
-
-        if action == "new":
-            new_count += 1
-            print(f"📘 Installed lesson: {lid}")
-        else:
-            update_count += 1
-            print(f"♻️ Updated lesson: {lid}")
-
-    print("\n✅ Update complete")
-    print(f"New: {new_count}")
-    print(f"Updated: {update_count}")
-    print(f"Skipped: {skip_count}\n")
+if __name__ == "__main__":
+    run_update()

@@ -1,0 +1,20 @@
+{
+  "title": "Gravity Intro (Beginner)",
+  "intro": "Gravity is like a magical force that pulls things towards each other. It keeps us on the ground and makes objects fall when we release them.",
+  "outro": "Great job! You've learned the basic idea of gravity for beginners.",
+  "concepts": [
+    {
+      "name": "Gravity Basics",
+      "explain": "Think of gravity as a giant magnet that pulls objects down. It holds us on the ground and causes things like apples to drop when we release them.",
+      "example": "Picture a ball rolling down a hill. Gravity is like a gentle hand guiding the ball downward.",
+      "check": {
+        "question": "How can you describe gravity in simple terms?",
+        "keywords": [
+          "magnet",
+          "pulls"
+        ]
+      }
+    }
+  ],
+  "lesson_id": "gravity_intro_beginner_beginner_beginner"
+}
