@@ -1,0 +1,23 @@
+{
+  "id": "552f1ae9-f1db-4a3e-b7aa-092325d03502",
+  "type": "concept",
+  "board": null,
+  "check": {
+    "keywords": [
+      "combined modules",
+      "interaction",
+      "communication",
+      "data flow",
+      "interfaces",
+      "work together",
+      "system testing",
+      "integration approaches"
+    ],
+    "question": "What is integration testing and what is its main purpose?",
+    "desired_answer": "Integration testing is a technique where multiple software components are combined and tested together to ensure they interact correctly and work as a complete system."
+  },
+  "grade": null,
+  "example": "",
+  "explain": "Integration testing is a software testing technique where multiple individual components or modules of a system are combined and tested together. Unlike unit testing, which checks components in isolation, integration testing focuses on verifying that different modules interact correctly. It ensures proper data flow, communication, and compatibility between components. The goal is to identify defects that occur when modules are integrated, such as interface mismatches or incorrect data handling. Common approaches include top-down testing, bottom-up testing, and sandwich testing. Integration testing helps ensure the system functions correctly as a whole.",
+  "version": "3.0"
+}

@@ -1,0 +1,21 @@
+{
+    "name": "Offline Learning Engine",
+    "short_name": "Learning",
+    "description": "An offline capable learning engine with AI Tutor.",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#1a1a1a",
+    "theme_color": "#4a90e2",
+    "icons": [
+        {
+            "src": "/assets/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/assets/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

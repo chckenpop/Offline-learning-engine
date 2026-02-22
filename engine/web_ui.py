@@ -493,7 +493,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', content_type)
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(content)
+            try:
+                self.wfile.write(content)
+            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+                pass
 
     def _handle_scheduler_save(self, data):
         import requests as req_lib, uuid
@@ -569,7 +572,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-Type', mime)
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(content)
+                try:
+                    self.wfile.write(content)
+                except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+                    pass
                 return
         self.send_response(404)
         self.end_headers()
@@ -580,7 +586,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/octet-stream')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        self.wfile.write(data)
+        try:
+            self.wfile.write(data)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            pass
 
 def background_sync():
     try: run_update()

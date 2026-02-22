@@ -566,6 +566,12 @@ const app = {
         const nav = document.querySelector(`.nav-item[data-target="${id}"]`);
         if (nav) nav.classList.add('active');
 
+        // Close sidebar on mobile after clicking
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+        }
+
         // Navigation
         if (id === 'dashboard') {
             this.renderDashboard();

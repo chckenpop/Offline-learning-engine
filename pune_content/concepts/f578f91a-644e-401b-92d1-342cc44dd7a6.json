@@ -1,0 +1,23 @@
+{
+  "id": "f578f91a-644e-401b-92d1-342cc44dd7a6",
+  "type": "concept",
+  "board": null,
+  "check": {
+    "keywords": [
+      "individual units",
+      "isolation",
+      "expected output",
+      "actual output",
+      "compare",
+      "correctness",
+      "automated",
+      "testing"
+    ],
+    "question": "What is unit testing and how does it verify that a program works correctly?",
+    "desired_answer": "Unit testing is a technique where individual units of a program are tested in isolation by providing inputs and comparing the actual output with the expected output to ensure correctness."
+  },
+  "grade": null,
+  "example": "",
+  "explain": "Unit testing is a software testing technique where individual units or components of a program (such as functions or methods) are tested independently to verify that they work correctly. Each unit is tested in isolation by providing specific inputs and comparing the actual output with the expected output. Unit tests are usually automated and help detect bugs early in development, improving code quality and reliability.",
+  "version": "3.0"
+}

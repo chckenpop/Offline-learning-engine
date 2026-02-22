@@ -3,9 +3,14 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Bright Study - Offline Learning</title>
-    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=7">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a90e2">
+    <link rel="apple-touch-icon" href="/assets/icon-192.png">
 </head>
 
 <body>
@@ -107,8 +112,14 @@
     <div class="app-shell" style="display: none;" id="app-shell">
         <nav class="sidebar">
             <div class="sidebar-brand">
-                <div class="brand-dot"></div>
-                <div class="brand-name">Bright Study</div>
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                    <div class="brand-dot"></div>
+                    <div class="brand-name">Bright Study</div>
+                </div>
+                <button class="mobile-close-btn"
+                    onclick="document.querySelector('.sidebar').classList.remove('active')">
+                    ✕
+                </button>
             </div>
             <div class="nav-item active" data-target="dashboard" onclick="app.showSection('dashboard')">Dashboard</div>
             <div class="nav-item" data-target="courses" onclick="app.showSection('courses')">Courses</div>
@@ -124,19 +135,31 @@
                     onclick="app.showSection('search-videos')" style="display: none;">Search Videos</div>
                 <div class="nav-item" data-target="updates" onclick="app.showSection('updates')">Updates</div>
             </div>
-            <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem;">
-                <button class="ghost-btn" onclick="app.resetMode()" style="width: 100%;">Change Mode</button>
+            <div class="sidebar-footer">
+                <button class="ghost-btn" onclick="app.resetMode()">Change Mode</button>
                 <button class="ghost-btn" onclick="app.resetProgress()"
-                    style="width: 100%; color: var(--danger); border-color: rgba(var(--danger-rgb), 0.2); font-size: 0.8rem;">Reset
+                    style="color: var(--danger); border-color: rgba(var(--danger-rgb), 0.2); font-size: 0.8rem;">Reset
                     Progress</button>
             </div>
         </nav>
 
         <main class="main-content">
             <header class="topbar">
-                <div>
-                    <div class="eyebrow">Learning Path</div>
-                    <h2 class="page-title">Stay consistent. Grow steady.</h2>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button id="mobile-menu-btn" class="mobile-menu-btn"
+                        style="background: var(--accent); color: var(--bg-deep); border: none; box-shadow: 0 4px 15px rgba(29, 211, 176, 0.4);"
+                        onclick="document.querySelector('.sidebar').classList.toggle('active')">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div>
+                        <div class="eyebrow">Learning Path</div>
+                        <h2 class="page-title">Stay consistent. Grow steady.</h2>
+                    </div>
                 </div>
                 <div class="topbar-status">
                     <span id="network-status" class="status-badge" style="display: none;"></span>
@@ -491,7 +514,16 @@
         </div>
     </div>
 
-    <script src="main.js"></script>
+    <script src="main.js?v=2"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((reg) => console.log('Service Worker Registered!'))
+                    .catch((err) => console.error('Service Worker Registration Failed:', err));
+            });
+        }
+    </script>
 </body>
 
 </html>
