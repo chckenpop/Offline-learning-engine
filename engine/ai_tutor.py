@@ -27,10 +27,16 @@ class AITutorService:
                 api_key=OPENROUTER_API_KEY,
                 base_url=OPENROUTER_API_URL
             )
-            key_preview = OPENROUTER_API_KEY[:8] + "..." if OPENROUTER_API_KEY else "None"
-            print(f"🤖 AITutorService initialized with OpenRouter. Key preview: {key_preview}")
+            # Log key preview (safely) to debug "User not found"
+            if len(OPENROUTER_API_KEY) > 10:
+                key_preview = f"{OPENROUTER_API_KEY[:6]}...{OPENROUTER_API_KEY[-4:]}"
+                print(f"🤖 [AI Tutor] Initialized with key: {key_preview}")
+            else:
+                print(f"🤖 [AI Tutor] Key found but seems too short: {len(OPENROUTER_API_KEY)} chars")
         else:
-            print("⚠️ AITutorService: OpenRouter API key or package not found. AI Tutor will be disabled or mock responses.")
+            print("⚠️ [AI Tutor] Package 'openai' or 'OPENROUTER_API_KEY' missing.")
+            if not OPENROUTER_API_KEY:
+                print("   Check Render Environment Variables for 'OPENROUTER_API_KEY'")
 
     def _init_db(self):
         """Initialize a local SQLite table for chat history per user."""
@@ -127,8 +133,9 @@ class AITutorService:
                 temperature=0.7,
                 max_tokens=600,
                 extra_headers={
-                    "HTTP-Referer": "https://bright-study1.onrender.com",
-                    "X-Title": "Bright Study"
+                    "HTTP-Referer": "https://bright-study1.onrender.com/",
+                    "Referer": "https://bright-study1.onrender.com/",
+                    "X-Title": "Bright Study Offline"
                 }
             )
             

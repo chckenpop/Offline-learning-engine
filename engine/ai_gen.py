@@ -61,8 +61,9 @@ class AIGenService:
 
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "HTTP-Referer": "https://bright-study1.onrender.com",
-            "X-Title": "Bright Study",
+            "HTTP-Referer": "https://bright-study1.onrender.com/",
+            "Referer": "https://bright-study1.onrender.com/",
+            "X-Title": "Bright Study Offline",
             "Content-Type": "application/json"
         }
 
