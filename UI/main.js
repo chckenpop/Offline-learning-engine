@@ -1668,14 +1668,16 @@ const app = {
 
         // Populate Lesson Dropdown
         const select = document.getElementById('tutor-lesson-select');
-        select.innerHTML = '<option value="">-- None --</option>';
-        if (this.lessons) {
-            this.lessons.forEach(l => {
-                const opt = document.createElement('option');
-                opt.value = l.id;
-                opt.textContent = l.title;
-                select.appendChild(opt);
-            });
+        if (select) {
+            select.innerHTML = '<option value="">-- None --</option>';
+            if (this.lessons) {
+                this.lessons.forEach(l => {
+                    const opt = document.createElement('option');
+                    opt.value = l.id;
+                    opt.textContent = l.title;
+                    select.appendChild(opt);
+                });
+            }
         }
 
         // Fetch History
@@ -1829,7 +1831,8 @@ const app = {
             const data = await res.json();
 
             // Remove loading
-            document.getElementById('chat-loading').remove();
+            const loadingEl = document.getElementById('chat-loading');
+            if (loadingEl) loadingEl.remove();
 
             // Render AI reply
             this.tutorHistory.push({ role: 'assistant', content: data.reply });
@@ -1837,16 +1840,20 @@ const app = {
 
             // Clear file attach after sending
             this.tutorFileContent = null;
-            document.getElementById('file-preview-area').style.display = 'none';
-            document.getElementById('tutor-file-upload').value = '';
+            const previewArea = document.getElementById('file-preview-area');
+            if (previewArea) previewArea.style.display = 'none';
+            const uploadInput = document.getElementById('tutor-file-upload');
+            if (uploadInput) uploadInput.value = '';
 
         } catch (e) {
-            document.getElementById('chat-loading').remove();
+            const loader = document.getElementById('chat-loading');
+            if (loader) loader.remove();
             this.tutorHistory.push({ role: 'assistant', content: `Error: ${e.message}` });
             this.renderChatHistory();
         } finally {
             input.disabled = false;
-            document.getElementById('chat-send-btn').disabled = false;
+            const sendBtn = document.getElementById('chat-send-btn');
+            if (sendBtn) sendBtn.disabled = false;
             input.focus();
         }
     },

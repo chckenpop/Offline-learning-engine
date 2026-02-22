@@ -7,10 +7,10 @@ try:
     from dotenv import load_dotenv
     env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backend', '.env')
     if os.path.exists(env_path):
-        load_dotenv(dotenv_path=env_path)
+        load_dotenv(dotenv_path=env_path, override=True)
     else:
         # Try root .env as fallback
-        load_dotenv()
+        load_dotenv(override=True)
 except Exception:
     pass
 
@@ -72,10 +72,10 @@ class AIGenService:
 
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "HTTP-Referer": "https://bright-study1.onrender.com/",
-            "Referer": "https://bright-study1.onrender.com/",
-            "X-Title": "Bright Study Offline",
-            "Origin": "https://bright-study1.onrender.com",
+            "HTTP-Referer": "http://localhost:8000",
+            "Referer": "http://localhost:8000",
+            "X-Title": "Bright Study Local",
+            "Origin": "http://localhost:8000",
             "Content-Type": "application/json"
         }
 

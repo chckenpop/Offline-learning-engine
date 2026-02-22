@@ -12,9 +12,9 @@ try:
     from dotenv import load_dotenv
     env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backend', '.env')
     if os.path.exists(env_path):
-        load_dotenv(dotenv_path=env_path)
+        load_dotenv(dotenv_path=env_path, override=True)
     else:
-        load_dotenv()
+        load_dotenv(override=True)
 except Exception:
     pass
 
