@@ -13,9 +13,9 @@ except ImportError:
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backend', '.env')
 load_dotenv(dotenv_path=env_path)
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "https://openrouter.ai/api/v1")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
+OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "https://openrouter.ai/api/v1").strip()
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-3.5-turbo").strip()
 
 class AITutorService:
     def __init__(self, db_path):
@@ -127,7 +127,7 @@ class AITutorService:
                 temperature=0.7,
                 max_tokens=600,
                 extra_headers={
-                    "HTTP-Referer": "https://bright-study.onrender.com",
+                    "HTTP-Referer": "https://bright-study1.onrender.com",
                     "X-Title": "Bright Study"
                 }
             )

@@ -4,7 +4,7 @@ import os
 
 # Configuration from User
 # Configuration
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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").strip()
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "openai/gpt-3.5-turbo"
 
@@ -61,7 +61,7 @@ class AIGenService:
 
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "HTTP-Referer": "https://bright-study.onrender.com",
+            "HTTP-Referer": "https://bright-study1.onrender.com",
             "X-Title": "Bright Study",
             "Content-Type": "application/json"
         }
