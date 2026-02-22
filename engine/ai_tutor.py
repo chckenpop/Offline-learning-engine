@@ -12,11 +12,17 @@ except ImportError:
 # Environment variables are loaded automatically by Render. 
 # We don't use load_dotenv here to avoid conflicts with dashboard settings.
 
-
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
+# Clean up accidental "sk or v1" or other common copy-paste errors
+if OPENROUTER_API_KEY.startswith("sk or v1"):
+    OPENROUTER_API_KEY = "sk-or-v1" + OPENROUTER_API_KEY[8:]
+elif " " in OPENROUTER_API_KEY:
+    OPENROUTER_API_KEY = OPENROUTER_API_KEY.replace(" ", "")
+
 OPENROUTER_API_URL = os.environ.get("OPENROUTER_API_URL", "https://openrouter.ai/api/v1").strip()
 # Use a more reliable free model
 OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemini-2.0-flash-lite-preview-02-05:free").strip()
+
 
 class AITutorService:
     def __init__(self, db_path):
@@ -35,11 +41,14 @@ class AITutorService:
                 print(f"🤖 [AI Tutor] Using Model: {OPENROUTER_MODEL}")
             else:
                 print(f"🤖 [AI Tutor] Key found but seems too short: {len(OPENROUTER_API_KEY)} chars. Content: '{OPENROUTER_API_KEY}'")
-
+            import sys
+            sys.stdout.flush()
         else:
             print("⚠️ [AI Tutor] Package 'openai' or 'OPENROUTER_API_KEY' missing.")
             if not OPENROUTER_API_KEY:
                 print("   Check Render Environment Variables for 'OPENROUTER_API_KEY'")
+            import sys
+            sys.stdout.flush()
 
     def _init_db(self):
         """Initialize a local SQLite table for chat history per user."""
@@ -131,12 +140,14 @@ class AITutorService:
 
         try:
             extra_headers = {
-                "HTTP-Referer": "https://bright-study1.onrender.com/",
-                "Referer": "https://bright-study1.onrender.com/",
-                "X-Title": "Bright Study Offline",
-                "Origin": "https://bright-study1.onrender.com"
+                "HTTP-Referer": "https://bright-study1.onrender.com",
+                "Referer": "https://bright-study1.onrender.com",
+                "X-Title": "Bright Study Offline"
             }
+            # Remove trailing slashes for strict APIs
             print(f"📡 [AI Tutor] Sending request to OpenRouter with headers: {extra_headers}")
+            import sys
+            sys.stdout.flush()
             
             response = self.client.chat.completions.create(
                 model=OPENROUTER_MODEL,
