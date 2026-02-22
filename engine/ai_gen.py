@@ -2,11 +2,10 @@ import requests
 import json
 import os
 
-# Configuration from User
 # Configuration
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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").strip()
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "openai/gpt-3.5-turbo"
+MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemini-2.0-flash-lite-preview-02-05:free").strip()
 
 class AIGenService:
     @staticmethod
@@ -64,6 +63,7 @@ class AIGenService:
             "HTTP-Referer": "https://bright-study1.onrender.com/",
             "Referer": "https://bright-study1.onrender.com/",
             "X-Title": "Bright Study Offline",
+            "Origin": "https://bright-study1.onrender.com",
             "Content-Type": "application/json"
         }
 

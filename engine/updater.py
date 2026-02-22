@@ -8,8 +8,8 @@ import shutil
 # 🔑 CONFIG (ADD YOUR KEYS HERE)
 # ==============================
 
-SUPABASE_URL = "https://njqlzvelsatdwzwynyek.supabase.co"
-SUPABASE_KEY = "sb_publishable_NOFcz2mruM_oYS8NaKWlIg_lrXZqXEM"
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://njqlzvelsatdwzwynyek.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "sb_publishable_NOFcz2mruM_oYS8NaKWlIg_lrXZqXEM")
 
 LESSONS_ENDPOINT = f"{SUPABASE_URL}/rest/v1/delivery_lessons"
 CONCEPTS_ENDPOINT = f"{SUPABASE_URL}/rest/v1/delivery_concepts"

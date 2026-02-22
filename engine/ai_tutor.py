@@ -9,13 +9,14 @@ try:
 except ImportError:
     openai = None
 
-# Load environment variables
-env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backend', '.env')
-load_dotenv(dotenv_path=env_path)
+# Environment variables are loaded automatically by Render. 
+# We don't use load_dotenv here to avoid conflicts with dashboard settings.
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
-OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "https://openrouter.ai/api/v1").strip()
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-3.5-turbo").strip()
+
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
+OPENROUTER_API_URL = os.environ.get("OPENROUTER_API_URL", "https://openrouter.ai/api/v1").strip()
+# Use a more reliable free model
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemini-2.0-flash-lite-preview-02-05:free").strip()
 
 class AITutorService:
     def __init__(self, db_path):
@@ -30,9 +31,11 @@ class AITutorService:
             # Log key preview (safely) to debug "User not found"
             if len(OPENROUTER_API_KEY) > 10:
                 key_preview = f"{OPENROUTER_API_KEY[:6]}...{OPENROUTER_API_KEY[-4:]}"
-                print(f"🤖 [AI Tutor] Initialized with key: {key_preview}")
+                print(f"🤖 [AI Tutor] Initialized with key: {key_preview} (Length: {len(OPENROUTER_API_KEY)})")
+                print(f"🤖 [AI Tutor] Using Model: {OPENROUTER_MODEL}")
             else:
-                print(f"🤖 [AI Tutor] Key found but seems too short: {len(OPENROUTER_API_KEY)} chars")
+                print(f"🤖 [AI Tutor] Key found but seems too short: {len(OPENROUTER_API_KEY)} chars. Content: '{OPENROUTER_API_KEY}'")
+
         else:
             print("⚠️ [AI Tutor] Package 'openai' or 'OPENROUTER_API_KEY' missing.")
             if not OPENROUTER_API_KEY:
@@ -127,16 +130,20 @@ class AITutorService:
         messages.append({"role": "user", "content": prompt})
 
         try:
+            extra_headers = {
+                "HTTP-Referer": "https://bright-study1.onrender.com/",
+                "Referer": "https://bright-study1.onrender.com/",
+                "X-Title": "Bright Study Offline",
+                "Origin": "https://bright-study1.onrender.com"
+            }
+            print(f"📡 [AI Tutor] Sending request to OpenRouter with headers: {extra_headers}")
+            
             response = self.client.chat.completions.create(
                 model=OPENROUTER_MODEL,
                 messages=messages,
                 temperature=0.7,
                 max_tokens=600,
-                extra_headers={
-                    "HTTP-Referer": "https://bright-study1.onrender.com/",
-                    "Referer": "https://bright-study1.onrender.com/",
-                    "X-Title": "Bright Study Offline"
-                }
+                extra_headers=extra_headers
             )
             
             ai_reply = response.choices[0].message.content.strip()
