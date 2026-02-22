@@ -1,4 +1,4 @@
-const CACHE_NAME = 'offline-learning-v4';
+const CACHE_NAME = 'offline-learning-v5';
 
 // Add all the files we want to cache right away when the app is installed
 const STATIC_ASSETS = [
@@ -19,27 +19,51 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Only intercept GET requests, skip API calls for now because the backend handles them
+    const url = new URL(event.request.url);
+    const cleanPath = url.pathname;
+
+    // 1. Skip non-GET requests
     if (event.request.method !== 'GET') return;
 
-    // Pass strictly API requests through to the network
-    if (event.request.url.includes('/api/')) {
+    // 2. Special handling for API calls (Network-First, then Cache)
+    if (cleanPath.startsWith('/api/')) {
+        event.respondWith(
+            fetch(event.request)
+                .then((networkResponse) => {
+                    const clonedResponse = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, clonedResponse);
+                    });
+                    return networkResponse;
+                })
+                .catch(() => {
+                    return caches.match(event.request);
+                })
+        );
         return;
     }
 
-    // Cache-First strategy for static files (HTML, CSS, JS, Images)
+    // 3. Static Assets (Bust query strings for caching)
+    // We match by pathname only so styles.css?v=123 matches /styles.css in cache
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
+        caches.match(cleanPath).then((cachedResponse) => {
             if (cachedResponse) {
-                return cachedResponse; // Return from cache
+                return cachedResponse;
             }
-            // Fetch from network if not in cache
             return fetch(event.request).then((networkResponse) => {
-                // Return network response right away, and optionally add to cache later if needed
+                // If it's a static file, cache it under the cleanPath for future offline use
+                if (networkResponse.ok && (
+                    cleanPath.match(/\.(js|css|png|jpg|jpeg|svg|ico|json)$/) ||
+                    cleanPath === '/' ||
+                    cleanPath === '/index.html'
+                )) {
+                    const clonedResponse = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(cleanPath, clonedResponse);
+                    });
+                }
                 return networkResponse;
             });
-        }).catch(() => {
-            // If the network fails and we don't have it in cache, we could return a fallback HTML here
         })
     );
 });

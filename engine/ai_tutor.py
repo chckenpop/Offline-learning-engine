@@ -27,7 +27,8 @@ class AITutorService:
                 api_key=OPENROUTER_API_KEY,
                 base_url=OPENROUTER_API_URL
             )
-            print("🤖 AITutorService initialized with OpenRouter.")
+            key_preview = OPENROUTER_API_KEY[:8] + "..." if OPENROUTER_API_KEY else "None"
+            print(f"🤖 AITutorService initialized with OpenRouter. Key preview: {key_preview}")
         else:
             print("⚠️ AITutorService: OpenRouter API key or package not found. AI Tutor will be disabled or mock responses.")
 
@@ -124,7 +125,11 @@ class AITutorService:
                 model=OPENROUTER_MODEL,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=600
+                max_tokens=600,
+                extra_headers={
+                    "HTTP-Referer": "https://bright-study.onrender.com",
+                    "X-Title": "Bright Study"
+                }
             )
             
             ai_reply = response.choices[0].message.content.strip()
