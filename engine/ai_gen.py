@@ -2,6 +2,18 @@ import requests
 import json
 import os
 
+# Load environment variables for local development
+try:
+    from dotenv import load_dotenv
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backend', '.env')
+    if os.path.exists(env_path):
+        load_dotenv(dotenv_path=env_path)
+    else:
+        # Try root .env as fallback
+        load_dotenv()
+except Exception:
+    pass
+
 # Configuration
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"

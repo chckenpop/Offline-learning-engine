@@ -8,6 +8,15 @@ import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 from datetime import datetime
+try:
+    from dotenv import load_dotenv
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backend', '.env')
+    if os.path.exists(env_path):
+        load_dotenv(dotenv_path=env_path)
+    else:
+        load_dotenv()
+except Exception:
+    pass
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 PUNE_CONTENT_DIR = os.path.join(PROJECT_DIR, 'pune_content')

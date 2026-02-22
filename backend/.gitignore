@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+pune_content/assets/videos/*.mp4
+pune_content/assets/thumbnails/*.jpg
+pune_content/assets/thumbnails/*.png
+sync_log.txt
+node_modules/

@@ -9,8 +9,17 @@ try:
 except ImportError:
     openai = None
 
-# Environment variables are loaded automatically by Render. 
-# We don't use load_dotenv here to avoid conflicts with dashboard settings.
+# Load environment variables for local development
+try:
+    from dotenv import load_dotenv
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backend', '.env')
+    if os.path.exists(env_path):
+        load_dotenv(dotenv_path=env_path)
+    else:
+        # Try root .env as fallback
+        load_dotenv()
+except Exception:
+    pass
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
 # Clean up accidental "sk or v1" or other common copy-paste errors
